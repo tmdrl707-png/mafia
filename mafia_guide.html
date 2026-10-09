@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마피아 마을 안내서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --day:#BFE3F0; --dusk:#F2B98F; --dawn:#FBE3C8; --night:#1E2350;
+  --ink:#1C2142; --lamp:#F4C24D; --blood:#D7425E; --ghost:#5FCFAE; --cit:#3E7BE6;
+  --fd:'Black Han Sans','Pretendard','Apple SD Gothic Neo',sans-serif;
+  --fb:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+}
+body{font-family:var(--fb);background:var(--bg);color:var(--fg);line-height:1.65;word-break:keep-all;
+  transition:background-color 1.2s ease,color .8s ease;font-size:17px}
+body.day  {--bg:var(--day); --fg:var(--ink);--card:#fff;    --card2:#E4F2F8;--line:rgba(28,33,66,.14);--muted:#4C5A84;--hi:var(--lamp)}
+body.dusk {--bg:var(--dusk);--fg:#2B1D2E;   --card:#FFF6EE; --card2:#FBE1CE;--line:rgba(43,29,46,.15);--muted:#76524F;--hi:#FFE08A}
+body.dawn {--bg:var(--dawn);--fg:#2B2340;   --card:#FFFDF8; --card2:#F7E9D6;--line:rgba(43,35,64,.14);--muted:#6E5D72;--hi:var(--lamp)}
+body.night{--bg:var(--night);--fg:#EEF0FF;  --card:#2B3172; --card2:#252B66;--line:rgba(238,240,255,.15);--muted:#B1B7E2;--hi:var(--lamp)}
+
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#sky::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity 1.2s;
+  background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff 60%,transparent),radial-gradient(1px 1px at 28% 8%,#fff 60%,transparent),
+  radial-gradient(1.5px 1.5px at 45% 22%,#fff 60%,transparent),radial-gradient(1px 1px at 63% 12%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 82% 30%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 8% 48%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 37% 70%,#fff 60%,transparent),radial-gradient(1px 1px at 92% 85%,#fff 60%,transparent)}
+body.night #sky::before{opacity:.65}
+#orb{position:absolute;width:min(34vw,280px);aspect-ratio:1;border-radius:50%;right:-7vw;top:-9vw;transition:all 1.4s cubic-bezier(.6,0,.3,1)}
+body.day #orb{background:radial-gradient(circle,#FFE38A 0 55%,#FFD25E 56% 100%);box-shadow:0 0 90px 30px rgba(255,214,94,.45)}
+body.dusk #orb{background:#FF9F6E;box-shadow:0 0 80px 20px rgba(255,140,90,.4);top:auto;bottom:-14vw;right:6vw}
+body.dawn #orb{background:#FFE7B8;box-shadow:0 0 70px 20px rgba(255,231,184,.6);top:auto;bottom:-14vw;right:-4vw}
+body.night #orb{background:#F4F0DC;box-shadow:inset -28px -14px 0 0 #D9D3B8,0 0 60px 6px rgba(244,240,220,.18)}
+
+main{position:relative;z-index:1}
+.wrap{max-width:980px;margin:0 auto;padding:0 22px}
+section{padding:72px 0 40px}
+h1,h2,h3{line-height:1.2}
+h2{font-family:var(--fd);font-weight:400;font-size:clamp(34px,5.4vw,52px);margin-bottom:14px}
+h3{font-size:20px;font-weight:800}
+p+p{margin-top:10px}
+.lede{font-size:clamp(18px,2.2vw,21px);max-width:44em}
+.muted{color:var(--muted)}
+b,strong{font-weight:800}
+.mark{background:linear-gradient(transparent 58%,rgba(244,194,77,.55) 58%)}
+body.night .mark{background:linear-gradient(transparent 58%,rgba(244,194,77,.35) 58%)}
+.card{background:var(--card);border-radius:22px;padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mt{margin-top:22px}
+.pill{display:inline-block;border-radius:999px;padding:2px 12px;font-weight:800;font-size:14px;color:#fff}
+.pill.cit{background:var(--cit)} .pill.maf{background:var(--blood)} .pill.gh{background:var(--ghost);color:#123}
+
+/* 목차 */
+.toc{position:sticky;top:0;z-index:10;background:var(--bg);transition:background-color 1.2s;border-bottom:1px solid var(--line)}
+.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:10px;padding-bottom:10px;scrollbar-width:none}
+.toc .wrap::-webkit-scrollbar{display:none}
+.toc a{flex:none;color:var(--fg);text-decoration:none;font-weight:700;font-size:14px;padding:7px 12px;border-radius:999px}
+.toc a.on{background:var(--lamp);color:#1C2142}
+
+/* 표지 */
+.hero{padding:15vh 0 8vh}
+.hero h1{font-family:var(--fd);font-weight:400;font-size:clamp(64px,12vw,128px);line-height:.95;letter-spacing:-1px}
+.hero .lede{margin-top:22px}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px}
+.facts div{background:var(--card);border-radius:18px;padding:16px 18px}
+.facts b{display:block;font-family:var(--fd);font-weight:400;font-size:34px;line-height:1.1}
+.facts span{color:var(--muted);font-size:15px;font-weight:700}
+.scroll{margin-top:44px;color:var(--muted);font-weight:700}
+
+/* 팀 */
+.team h3{font-family:var(--fd);font-weight:400;font-size:30px;margin:6px 0 10px}
+.team ul{list-style:none;display:grid;gap:8px}
+.team li{padding-left:1.2em;position:relative}
+.team li::before{content:"";position:absolute;left:0;top:.68em;width:.45em;height:.45em;border-radius:50%;background:var(--hi)}
+.team.maf{border-top:6px solid var(--blood)} .team.cit{border-top:6px solid var(--cit)}
+
+/* 하루 흐름 */
+.timeline{display:flex;gap:6px;margin-top:22px}
+.timeline button{flex:var(--w);min-width:92px;border:none;cursor:pointer;font:inherit;color:var(--fg);background:var(--card);border-radius:14px;padding:12px 8px;
+  text-align:left;display:grid;gap:2px;border:3px solid transparent}
+.timeline button.on{border-color:var(--lamp)}
+.timeline b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timeline small{color:var(--muted);font-weight:700}
+.tl-bar{height:6px;border-radius:3px;background:var(--line);margin-top:6px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:26px;margin-top:20px;align-items:start}
+.stage h3{font-family:var(--fd);font-weight:400;font-size:34px;margin-bottom:6px}
+.stage .phone-tag{display:inline-flex;gap:6px;align-items:center;font-weight:800;border-radius:999px;padding:4px 14px;margin:6px 0 14px;font-size:15px}
+.phone-tag.out{background:var(--lamp);color:#1C2142}
+.phone-tag.in{background:var(--card2)}
+.stage ul{list-style:none;display:grid;gap:10px}
+.stage li{background:var(--card);border-radius:14px;padding:12px 16px}
+.stage-nav{display:flex;gap:8px;margin-top:16px}
+.stage-nav button{font:inherit;font-weight:800;border:none;cursor:pointer;background:var(--card2);color:var(--fg);border-radius:12px;padding:10px 16px}
+
+/* 휴대폰 모형 */
+.phone{background:#11142E;border-radius:34px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.screen{border-radius:26px;overflow:hidden;background:var(--scr,#1E2350);color:var(--sfg,#EEF0FF);min-height:440px;font-size:12px;line-height:1.45;padding:12px 11px;display:flex;flex-direction:column;gap:8px}
+.screen.light{--scr:#F2B98F;--sfg:#2B1D2E}
+.screen.dawn{--scr:#FBE3C8;--sfg:#2B2340}
+.sbar{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.sbar .n{font-family:var(--fd);font-weight:400;font-size:17px;margin-right:4px}
+.sbar .t{font-family:var(--fd);font-weight:400;font-size:17px}
+.sc{background:rgba(255,255,255,.1);border-radius:13px;padding:9px}
+.screen.light .sc,.screen.dawn .sc{background:#fff}
+.sc h4{font-size:12.5px;margin-bottom:4px}
+.sc .m{opacity:.7;font-size:11px}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}
+.chips i{font-style:normal;background:rgba(255,255,255,.12);border-radius:8px;padding:4px 2px;text-align:center;font-weight:700;font-size:10.5px;border:1.5px solid transparent}
+.screen.light .chips i,.screen.dawn .chips i{background:#FBE1CE}
+.chips i.on{background:var(--lamp)!important;color:#1C2142;border-color:#1C2142}
+.sbtn{background:var(--lamp);color:#1C2142;border-radius:11px;text-align:center;font-weight:800;padding:9px;margin-top:auto}
+.pocket{flex:1;display:grid;place-items:center;text-align:center;padding:20px 8px}
+.pocket .big{font-size:52px;line-height:1}
+.pocket b{display:block;font-family:var(--fd);font-weight:400;font-size:20px;margin:10px 0 6px}
+.rc{background:rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;text-align:center}
+.rc .e{font-size:38px;line-height:1}
+.rc .nm{font-family:var(--fd);font-size:26px}
+.cap{text-align:center;color:var(--muted);font-size:14px;font-weight:700;margin-top:10px}
+
+.rule{font-family:var(--fd);font-weight:400;font-size:clamp(24px,3.4vw,34px);line-height:1.3;margin:26px 0 8px;max-width:22em}
+.uses{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.uses span{background:var(--card);border-radius:999px;padding:6px 14px;font-weight:700}
+
+/* 직업 */
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.role{background:var(--card);border-radius:20px;padding:18px;display:grid;gap:6px;align-content:start;position:relative}
+.role .top{display:flex;justify-content:space-between;align-items:center}
+.role .e{font-size:40px;line-height:1}
+.role .cnt{font-family:var(--fd);font-weight:400;font-size:24px}
+.role h3{font-family:var(--fd);font-weight:400;font-size:28px}
+.role.maf{box-shadow:inset 0 0 0 3px var(--blood)}
+.role .tip{font-size:14.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin-top:4px}
+
+/* 단서 */
+.clue{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:start}
+.clue .ic{font-size:36px;line-height:1.1;text-align:center}
+.whisper{font-family:var(--fd);font-weight:400;font-size:clamp(20px,2.6vw,26px);line-height:1.35;background:var(--card);border-radius:18px;padding:18px 20px;margin-top:14px}
+.whisper i{font-style:normal;display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--fg);color:var(--bg);font-size:.75em;margin-right:8px;vertical-align:.12em}
+
+/* 이야기 */
+.story{display:grid;gap:14px;margin-top:22px}
+.beat{display:grid;grid-template-columns:110px 1fr;gap:16px;background:var(--card);border-radius:20px;padding:18px 20px}
+.beat .when{font-weight:800;color:var(--muted)}
+.beat .when b{display:block;font-family:var(--fd);font-weight:400;font-size:24px;color:var(--fg)}
+.say{display:block;margin-top:6px;padding-left:12px;border-left:3px solid var(--lamp);font-style:normal}
+
+/* 약속 */
+.dos li{margin-left:1.2em;margin-top:6px}
+.no h3{color:var(--blood)} .yes h3{color:#1E9E73}
+body.night .yes h3{color:var(--ghost)}
+
+/* FAQ */
+details.q{background:var(--card);border-radius:16px;padding:0 18px;margin-top:10px}
+details.q summary{cursor:pointer;font-weight:800;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details.q summary::-webkit-details-marker{display:none}
+details.q summary::after{content:"+";font-size:22px;line-height:1;color:var(--muted)}
+details.q[open] summary::after{content:"−"}
+details.q p{padding-bottom:16px}
+
+.teacher table{width:100%;border-collapse:collapse;font-size:15.5px;margin-top:10px}
+.teacher td,.teacher th{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.teacher th{white-space:nowrap}
+footer{padding:60px 0 80px;text-align:center;color:var(--muted);font-weight:700}
+footer b{display:block;font-family:var(--fd);font-weight:400;font-size:40px;color:var(--fg);margin-bottom:6px}
+
+:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+@media (max-width:820px){
+  .grid2,.grid3,.roles{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr 1fr}
+  .stage{grid-template-columns:1fr}
+  .stage .phone{max-width:280px;margin:0 auto}
+  .timeline{flex-wrap:wrap}
+  .timeline button{flex:1 1 30%}
+  .beat{grid-template-columns:1fr;gap:6px}
+  body{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{.toc,#sky{display:none} body{background:#fff!important;color:#000} section{break-inside:avoid}}
+
+/* ---- v3 ---- */
+.flip{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+.flip.three{grid-template-columns:repeat(3,1fr)}
+.flip.three .arrow{font-size:clamp(20px,2.1vw,24px)}
+.flip .card{display:grid;gap:10px;align-content:start}
+.flip .arrow{font-family:var(--fd);font-weight:400;font-size:clamp(22px,3vw,30px);line-height:1.25}
+.flip .card.c{border-top:6px solid var(--cit)} .flip .card.m{border-top:6px solid var(--blood)} .flip .card.g{border-top:6px solid var(--ghost)}
+.roles.four{grid-template-columns:repeat(2,1fr)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+.steps .card{display:grid;gap:8px;align-content:start;position:relative;padding-top:52px}
+.steps .card::before{content:attr(data-n);position:absolute;left:20px;top:16px;width:28px;height:28px;border-radius:50%;background:var(--lamp);color:#1C2142;font-weight:900;display:grid;place-items:center}
+.steps h3{font-size:19px}
+.tv{background:#1E2350;color:#EEF0FF;border-radius:22px;padding:18px 20px;margin-top:18px;box-shadow:0 14px 34px rgba(0,0,0,.2)}
+.tv .tvh{display:flex;justify-content:space-between;align-items:center;font-weight:800;opacity:.85;margin-bottom:10px;font-size:15px}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.vcard{background:#2B3172;border-radius:16px;padding:12px 14px;display:grid;gap:6px;position:relative}
+.vcard .n{font-family:var(--fd);font-size:22px}
+.vcard .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:#252B66}
+.vcard .bar i{display:block;width:var(--w)} .vcard .bar .k{background:var(--blood)} .vcard .bar .s{background:var(--cit)}
+.vcard .ct{display:flex;justify-content:space-between;font-weight:800;font-size:14px}
+.vcard .st{position:absolute;top:8px;right:10px;font-family:var(--fd);font-size:18px;border:3px solid;border-radius:8px;padding:0 6px;transform:rotate(-8deg)}
+.vcard.ex{box-shadow:inset 0 0 0 3px var(--blood)} .vcard.ex .st{color:var(--blood)} .vcard.sv .st{color:var(--ghost)}
+.stat2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.stat2 div{background:var(--card);border-radius:16px;padding:14px 16px;display:grid}
+.stat2 b{font-family:var(--fd);font-weight:400;font-size:46px;line-height:1}
+.stat2 .m b{color:var(--blood)}
+.stat2 span{font-weight:800;color:var(--muted)}
+.ctable{width:100%;border-collapse:collapse;margin-top:16px;background:var(--card);border-radius:18px;overflow:hidden}
+.ctable th,.ctable td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line)}
+.ctable th{background:var(--card2);font-size:15px}
+.ctable td:first-child{font-weight:800}
+.ctable td.m{color:var(--blood);font-weight:900}
+.ctable tr:last-child td{border-bottom:none}
+.balance td,.balance th{font-size:15px}
+.balance th{white-space:normal;width:30%}
+.timeline{display:grid;grid-template-columns:repeat(8,minmax(0,1fr))}
+.timeline button{min-width:0}
+.timeline b{white-space:normal;font-size:14px;line-height:1.3}
+@media (max-width:820px){.timeline{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* 인원 고르기 */
+.picker{background:var(--card);border-radius:24px;padding:22px 24px;display:grid;gap:18px}
+.pk-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.pk-n{font-family:var(--fd);font-weight:400;font-size:64px;line-height:1;min-width:2.2em}
+.pk-n small{font-family:var(--fb);font-size:18px;font-weight:800;margin-left:4px}
+.pk-ctrl{flex:1;min-width:220px;display:grid;gap:8px}
+.pk-ctrl input[type=range]{width:100%;accent-color:var(--blood);height:28px}
+.pk-btns{display:flex;gap:8px}
+.pk-btns button{font:inherit;font-weight:900;font-size:20px;border:none;cursor:pointer;background:var(--card2);color:var(--fg);border-radius:12px;width:48px;height:44px}
+.pk-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;font-weight:700}
+.pk-roles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pk-roles div{background:var(--card2);border-radius:16px;padding:12px 14px;display:grid;gap:2px}
+.pk-roles b{font-family:var(--fd);font-weight:400;font-size:40px;line-height:1}
+.pk-roles .m b{color:var(--blood)}
+.pk-roles span{font-weight:800;color:var(--muted);font-size:14px}
+.pk-facts{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.pk-facts li{padding-left:1.2em;position:relative}
+.pk-facts li::before{content:"";position:absolute;left:.15em;top:.65em;width:.45em;height:.45em;border-radius:50%;background:var(--hi)}
+.toc .pk-chip{margin-left:auto;background:var(--card);border-radius:999px;padding:7px 12px;font-weight:800;font-size:14px;color:var(--fg);text-decoration:none;flex:none}
+.ctable tr.on td{background:var(--hi);color:#1C2142}
+.ctable tr.on td.m{color:var(--blood)}
+@media (max-width:820px){.pk-roles{grid-template-columns:repeat(2,1fr)}.pk-facts{grid-template-columns:1fr}.pk-n{font-size:52px}}
+@media (max-width:820px){.flip,.flip.three,.roles.four,.steps{grid-template-columns:1fr}.vgrid{grid-template-columns:1fr 1fr}.ctable th,.ctable td{padding:8px 4px;font-size:14px}}
+</style>
+</head>
+<body class="night">
+<div id="sky"><div id="orb"></div></div>
+<main>
+
+<header class="hero wrap" data-sky="night" id="top">
+  <h1>마피아<br>마을</h1>
+  <p class="lede">이 교실에 마피아가 숨어 있어요. 휴대폰으로 비밀 직업을 받고, 휴대폰을 넣은 채 교실을 돌아다니며 이야기해서 누가 마피아인지 밝혀내는 게임이에요. 죽어도 끝이 아니에요. 유령이 되어 계속 게임에 참여해요.</p>
+  <div class="facts">
+    <div><b>10~30명</b><span>모두 한 마을</span></div>
+    <div><b>직업 4개</b><span>마피아·경찰·의사·시민</span></div>
+    <div><b>약 <span data-v="min">30</span>분</b><span><span data-v="n">24</span>명 기준 플레이 시간</span></div>
+    <div><b>👻 유령</b><span>죽어도 계속 참여</span></div>
+  </div>
+  <p class="scroll">먼저 우리 마을 인원을 정하고, 아래로 내리면서 차례대로 읽어 보세요 ↓</p>
+</header>
+
+<nav class="toc" aria-label="목차"><div class="wrap">
+  <a href="#teams">두 편</a><a href="#roles">직업</a><a href="#day">하루 흐름</a><a href="#court">광장 재판</a>
+  <a href="#morning">아침 발표</a><a href="#ghost">유령</a><a href="#comp">인원별 구성</a><a href="#story">예시</a><a href="#promise">약속</a><a href="#faq">질문</a><a href="#teacher">선생님용</a><a class="pk-chip" href="#pick">👥 <span data-v="n">24</span>명</a>
+</div></nav>
+
+<!-- 인원 고르기 -->
+<section id="pick" data-sky="night"><div class="wrap">
+  <h2>우리 마을은 몇 명?</h2>
+  <p class="lede">인원을 고르면 직업 수, 처형 후보 수, 과반수 표 수가 이 안내서 전체에서 바로 바뀌어요.</p>
+  <div class="picker mt">
+    <div class="pk-top">
+      <div class="pk-n"><span data-v="n">24</span><small>명</small></div>
+      <div class="pk-ctrl">
+        <input type="range" id="pkRange" min="10" max="30" step="1" value="24" aria-label="인원">
+        <div class="pk-scale"><span>10명</span><span>20명</span><span>30명</span></div>
+      </div>
+      <div class="pk-btns"><button data-d="-1" aria-label="한 명 줄이기">−</button><button data-d="1" aria-label="한 명 늘리기">+</button></div>
+    </div>
+    <div class="pk-roles">
+      <div class="m"><b data-v="mafia">6</b><span>🔪 마피아</span></div>
+      <div><b data-v="police">3</b><span>🚓 경찰</span></div>
+      <div><b data-v="doctor">1</b><span>💉 의사</span></div>
+      <div><b data-v="citizen">14</b><span>🙂 시민</span></div>
+    </div>
+    <ul class="pk-facts">
+      <li>첫날 처형 후보: <b><span data-v="mafia">6</span>명</b> (남은 마피아 수만큼)</li>
+      <li>첫날 최종 판정: 처형 <b><span data-v="need">12</span>표 이상</b>이면 처형 (과반수)</li>
+      <li>마피아 승리: 살아 있는 마피아 수 ≥ 나머지 사람 수</li>
+      <li>예상 플레이 시간: 약 <b><span data-v="min">30</span>분</b> (<span data-v="days">5~7</span>일, 권장 속도 기준)</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- 두 편 -->
+<section id="teams" data-sky="night"><div class="wrap">
+  <h2>두 편이 싸워요</h2>
+  <p class="lede">게임이 시작되면 모두 비밀 직업을 하나씩 받아요. <span class="mark">마피아 편</span>과 <span class="mark">시민 편</span>으로 나뉘어요. <b>첫날 낮에는 마피아끼리도 서로를 몰라요.</b> 첫날 밤에 서로를 확인하고, 둘째 날 밤부터 본격적인 학살이 시작돼요.</p>
+  <div class="grid2 mt">
+    <div class="card team cit"><span class="pill cit">시민 편</span><h3>🙂 마피아를 모두 처형하면 승리</h3>
+      <ul><li>살아 있는 마피아가 0명이 되는 순간 게임이 끝나요.</li><li>경찰, 의사, 시민이 시민 편이에요.</li></ul></div>
+    <div class="card team maf"><span class="pill maf">마피아 편</span><h3>🔪 시민과 수가 같아지면 승리</h3>
+      <ul><li>살아 있는 마피아 수가 나머지 살아 있는 사람 수와 <b>같거나 많아지는 순간</b> 게임이 끝나요.</li><li>예: 살아 있는 사람 6명 중 마피아가 3명이면 마피아 승리!</li></ul></div>
+  </div>
+  <div class="card mt"><h3>🌙 밤의 규칙</h3>
+    <ul class="dos mt"><li><b>첫날 밤</b>: 마피아들이 서로가 누군지 확인해요. <b>암살은 없어요.</b> 경찰은 조사하고, 의사는 쉬어요.</li>
+    <li><b>둘째 날 밤부터</b>: 살아 있는 마피아가 <b>한 명당 1명씩</b> 암살해요. 마피아가 <span data-v="mafia">6</span>명이면 하룻밤에 최대 <span data-v="mafia">6</span>명이 죽을 수 있어요!</li>
+    <li>의사가 지킨 사람은 살아남아요. 의사가 <span data-v="doctor">3</span>명이라 여러 명을 지킬 수 있어요.</li></ul></div>
+  <p class="mt">죽은 사람은 <b>유령</b>이 되어 한쪽 편에 서요. 그 편이 이기면 유령도 함께 승리해요. 정해진 일수는 없어요. 어느 한쪽이 이길 때까지 낮과 밤이 반복돼요.</p>
+</div></section>
+
+<!-- 직업 -->
+<section id="roles" data-sky="dawn"><div class="wrap">
+  <h2>직업은 네 가지</h2>
+  <p class="lede"><b><span data-v="n">24</span>명</b>일 때 구성이에요. 직업 카드는 휴대폰에서 <b>꾹 누르고 있을 때만</b> 보여서 옆 친구가 엿보기 어려워요.</p>
+  <div class="roles four" id="roleGrid"></div>
+</div></section>
+
+<!-- 하루 흐름 -->
+<section id="day" data-sky="day"><div class="wrap">
+  <h2>하루는 이렇게 흘러가요</h2>
+  <p class="lede">첫날 처음에 휴대폰으로 직업을 확인하고 나면, 아래 여덟 단계가 매일 반복돼요. <b>시간 제한은 없어요.</b> 사회자(선생님)가 상황을 보고 다음 단계로 넘겨요. 단계를 눌러 보세요.</p>
+  <div class="timeline" id="tl" role="tablist"></div>
+  <div class="stage" id="stage"></div>
+</div></section>
+
+<!-- 광장 재판 -->
+<section id="court" data-sky="dusk"><div class="wrap">
+  <h2>🏛️ 광장 재판은 네 단계</h2>
+  <p class="lede">처형은 한 번의 투표로 끝나지 않아요. 후보를 뽑고, 변론을 듣고, 한 명씩 판정해요. 모든 과정이 선생님 화면에 보여요. 👻 유령은 이 시간 동안 책상에 엎드려 있고 투표하지 않아요.</p>
+  <div class="steps">
+    <div class="card" data-n="1"><h3>광장 토론</h3><p>자리에 앉아 의심 가는 사람을 지목하고 이유를 말해요. 지목받은 사람은 변론해요.</p></div>
+    <div class="card" data-n="2"><h3>후보 지명</h3><p>휴대폰으로 1명씩 투표해요. 득표 상위 <b>‘남은 마피아 수’만큼</b> 처형 후보가 돼요. 마피아가 <span data-v="mafia">6</span>명이면 후보도 <span data-v="mafia">6</span>명!</p><p class="muted">마지막 자리에서 표가 같으면 <b>🔁 결선 투표</b>로 동점자끼리 다시 겨뤄요.</p></div>
+    <div class="card" data-n="3"><h3>최후의 발언</h3><p>선생님 화면에 후보와 받은 표가 나와요. 사회자가 한 명씩 불러 한마디씩 들어요.</p></div>
+    <div class="card" data-n="4"><h3>최종 판정</h3><p>후보마다 <b>처형</b> 또는 <b>살림</b>을 골라요. 처형이 <b>과반수</b>면 처형! 고르지 않으면 ‘살림’으로 세요. 자기 자신에게는 투표할 수 없어요.</p></div>
+  </div>
+  <div class="tv" aria-label="선생님 화면 예시: 판결">
+    <div class="tvh"><span>📺 선생님 화면 · 🔨 판결</span><span>살아 있는 사람 21명 → 처형 11표 이상</span></div>
+    <div class="vgrid">
+      <div class="vcard ex"><div class="n">3번 서준</div><div class="bar"><i class="k" style="--w:70%"></i><i class="s" style="--w:30%"></i></div><div class="ct"><span>처형 14</span><span>살림 6</span></div><div class="st">처형</div></div>
+      <div class="vcard sv"><div class="n">8번 하린</div><div class="bar"><i class="k" style="--w:40%"></i><i class="s" style="--w:60%"></i></div><div class="ct"><span>처형 8</span><span>살림 12</span></div><div class="st">생존</div></div>
+      <div class="vcard sv"><div class="n">15번 도윤</div><div class="bar"><i class="k" style="--w:50%"></i><i class="s" style="--w:50%"></i></div><div class="ct"><span>처형 10</span><span>살림 10</span></div><div class="st">생존</div></div>
+    </div>
+  </div>
+  <p class="mt">15번 도윤은 처형 10표로 딱 절반이었지만, <b>절반을 넘어야</b> 처형이라 살아남았어요. 처형된 사람이 마피아였는지는 <b>공개되지 않아요.</b> 다음 날 아침 발표로 짐작해야 해요.</p>
+  <div class="card mt"><h3>🔁 동점이면 결선 투표</h3>
+    <p class="mt">예를 들어 후보가 4명이어야 하는데 득표가 <b>5표, 4표, 3표, 2표, 2표, 2표</b>라면, 위의 3명은 후보로 확정이고 2표인 세 사람이 마지막 1자리를 두고 결선을 해요. 살아 있는 사람 모두 동점자 중 1명에게 다시 투표하고, 가장 많이 받은 사람이 후보가 돼요.</p>
+    <p class="muted">결선에서도 또 동점이면, 그 동점자끼리 다시 결선을 해요. 자리가 정해질 때까지 반복해요.</p></div>
+</div></section>
+
+<!-- 아침 발표 -->
+<section id="morning" data-sky="dawn"><div class="wrap">
+  <h2>☀️ 아침에는 숫자가 발표돼요</h2>
+  <p class="lede">밤의 일이 모두 끝나면 아침에 세 가지가 발표돼요.</p>
+  <div class="card mt">
+    <p style="font-family:var(--fd);font-size:clamp(20px,2.6vw,26px);color:var(--blood)">🌙 지난밤 12번 시우님이 마피아에게 암살당했습니다.</p>
+    <div class="stat2"><div><b>19</b><span>살아 있는 사람</span></div><div class="m"><b>4</b><span>남은 마피아</span></div></div>
+    <p class="mt muted">🤔 어젯밤 의심을 많이 받은 사람: 7번 예준 5표 · 9번 서연 3표 · 2번 지아 3표</p>
+  </div>
+  <div class="grid2 mt">
+    <div class="card"><h3>‘남은 마피아’ 숫자로 추리하기</h3><p class="mt">어제 아침 남은 마피아가 5명이었는데 오늘 4명이에요. 어제 처형된 사람은 서준 한 명뿐이었으니… <b>서준이 마피아였다</b>는 뜻이에요!</p>
+      <p>두 명이 처형됐는데 마피아가 1명 줄었다면? 둘 중 한 명만 마피아였던 거예요. 누구였는지는 다시 추리해야 해요.</p></div>
+    <div class="card"><h3>🤔 의심 순위</h3><p class="mt">밤에 살아 있는 사람 모두가 몰래 고른 ‘가장 의심 가는 사람’ 상위 3명이에요. 누가 누구를 골랐는지는 공개되지 않아요.</p>
+      <p class="muted">밤에 능력이 없는 사람도 휴대폰을 만지게 해서, 누가 경찰이나 의사인지 티가 나지 않게 하는 장치이기도 해요.</p></div>
+  </div>
+  <p class="mt">그리고 내 휴대폰의 <b>📒 수첩</b>에는 나만 아는 결과가 쌓여요. 경찰의 조사 결과, 의사가 지킨 사람, 유령이 본 직업 등을 언제든 다시 볼 수 있어요.</p>
+</div></section>
+
+<!-- 유령 -->
+<section id="ghost" data-sky="night"><div class="wrap">
+  <h2>👻 죽어도 끝이 아니에요</h2>
+  <p class="lede">처형되든 암살되든, 죽은 사람은 모두 <span class="pill gh">유령</span>이 돼요. 유령은 어느 한쪽 편에 서서, 그 편이 이기면 함께 승리해요. 어느 편이 될지는 <b>누가, 어떻게</b> 죽었는지에 따라 달라요.</p>
+  <div class="flip three">
+    <div class="card m"><p class="arrow">🔪 마피아가 죽으면<br>→ 마피아 편</p>
+      <p>원래 마피아였으니 당연히 마피아 편이에요. 동료가 이기면 함께 승리해요.</p></div>
+    <div class="card c"><p class="arrow">🌙 마피아가 아닌 사람이 암살당하면<br>→ 시민 편</p>
+      <p>마피아에게 당했으니 바로 시민 편 유령이 돼요. 고를 필요 없어요.</p>
+      <p class="muted">단, 마피아는 <b>동료 마피아도 암살할 수 있어요.</b> 그래서 밤에 죽은 유령이 꼭 시민 편이라고 믿을 수는 없어요.</p></div>
+    <div class="card g"><p class="arrow">⚖️ 처형당한 시민 편 사람은<br>→ 편을 직접 골라요</p>
+      <p>경찰, 의사, 시민이 처형되면 휴대폰에 선택 화면이 떠요. 한 번 고르면 바꿀 수 없어요.</p>
+      <ul class="dos"><li><b>시민 편</b>: 마피아가 누군지는 몰라요.</li><li><b>마피아 편</b>: 고르는 순간 <b>마피아가 누군지 알게 돼요.</b></li></ul>
+      <p class="muted">억울하게 처형됐으니 마을에 복수할 수도, 끝까지 마을을 도울 수도 있어요. 누가 어느 편을 골랐는지는 아무도 몰라요.</p></div>
+  </div>
+  <div class="grid3 mt">
+    <div class="card"><h3>📵 밀담에는 참여</h3><p class="mt">유령도 돌아다니며 친구들과 이야기할 수 있어요. 본 것을 말해도 되고, 숨겨도 되고, 거짓말을 해도 돼요.</p></div>
+    <div class="card"><h3>💤 광장 재판은 엎드리기</h3><p class="mt">광장 토론부터 판결까지 책상에 엎드려 있어요. 듣는 건 괜찮지만, 고개를 들거나 말하면 안 돼요. 투표권도 없어요.</p></div>
+    <div class="card"><h3>👁 영혼 투시는 단 한 번</h3><p class="mt">밤에 살아 있는 사람 1명을 골라 <b>진짜 직업</b>을 바로 봐요. <b>게임 중 딱 한 번</b>만 쓸 수 있으니, 유령끼리 누구를 볼지 나눠 정하거나 마지막까지 아껴 둘 수도 있어요.</p></div>
+  </div>
+  <div class="stage">
+    <div>
+      <div class="card"><h3>유령의 말, 믿어도 될까?</h3>
+        <p class="mt">시민 편 유령은 영혼 투시로 마피아를 찾으면 밀담에서 알려 줄 거예요. 하지만 마피아 편 유령도 똑같이 “내가 봤는데 저 사람이 마피아야”라고 말할 수 있어요. 진짜 경찰이나 의사를 찾아 마피아에게 몰래 알려 줄 수도 있고요.</p>
+        <p>유령이 어느 편인지는 아무도 모르니, 유령의 말은 <b>살아 있는 사람이 판단</b>해야 해요. 여러 유령의 말이 맞아떨어지는지, 아침의 ‘남은 마피아’ 숫자와 맞는지 따져 보세요.</p></div>
+    </div>
+    <div><div class="phone" id="ghostPhone"></div><p class="cap">마피아 편 유령의 밤 화면 예시</p></div>
+  </div>
+</div></section>
+
+<!-- 인원별 구성 -->
+<section id="comp" data-sky="dawn"><div class="wrap">
+  <h2>인원별 직업 구성</h2>
+  <p class="lede">게임은 10명부터 30명까지 할 수 있어요. 인원마다 시뮬레이션을 돌려 <b>양쪽 승률이 50%에 가장 가까운 조합</b>을 골랐고, 입장한 인원에 맞춰 자동으로 정해져요. 지금 고른 <b><span data-v="n">24</span>명</b>은 노란 줄이에요.</p>
+  <table class="ctable" id="ctable">
+    <tr><th>인원</th><th>🔪 마피아</th><th>🚓 경찰</th><th>💉 의사</th><th>🙂 시민</th></tr>
+  </table>
+  <p class="mt muted">경찰이 여러 명이면 <b>경찰 팀</b>이 돼요. 서로 누가 경찰인지는 모르지만 조사 결과는 경찰 전원에게 공유돼요. 둘째 밤부터는 마피아 수만큼 암살이 일어나서, 의사를 넉넉히 두어 버틸 수 있게 했어요.</p>
+</div></section>
+
+<!-- 예시 -->
+<section id="story" data-sky="day"><div class="wrap">
+  <h2>예시로 보는 이틀</h2>
+  <p class="lede">24명 마을, 마피아 6명, 경찰 3명, 의사 3명. 시민 민수와 경찰 지아의 이야기를 따라가 볼게요.</p>
+  <div class="story">
+    <div class="beat"><div class="when"><b>1일 밀담</b></div><div>민수는 교실을 돌아다니며 친구들의 반응을 살펴요. 서준이 유난히 말을 돌리는 게 수상해 보여요.</div></div>
+    <div class="beat"><div class="when"><b>1일 재판</b></div><div>후보 지명에서 서준, 하린, 도윤, 예준, 하윤이 확정됐고, 마지막 자리는 민수와 시우가 동점이라 결선 투표 끝에 민수가 후보 6명에 들어갔어요. 최후의 발언에서 민수는 “나 진짜 시민이야!”라고 외쳤지만, 최종 판정에서 처형 13표를 받아 처형됐어요. 서준도 처형!</div></div>
+    <div class="beat"><div class="when"><b>1일 판결</b></div><div>유령이 된 민수의 휴대폰에 선택 화면이 떠요. 억울한 민수는 고민 끝에 <b>마피아 편</b>을 골랐어요.
+      <em class="say">🔪 마피아 편 유령이 되었어요. 마피아는 3번 서준, 9번 서연, 12번 시우, …</em>이제 민수는 마피아가 이겨야 이겨요.</div></div>
+    <div class="beat"><div class="when"><b>1일 밤</b></div><div>마피아들은 휴대폰으로 처음 서로를 확인해요. 오늘 밤은 아무도 죽지 않아요. 지아는 경찰 능력으로 9번 서연을 조사해요. 화면에 ‘경찰 선택’ 표시가 붙은 사람은 다른 경찰이 고른 사람이라 피했어요. 유령 민수는 영혼 투시로 4번 하윤을 보니 <b>의사</b>예요.</div></div>
+    <div class="beat"><div class="when"><b>2일 아침</b></div><div>“남은 마피아 5명.” 어제 6명이었으니 민수와 서준 중 한 명이 마피아였어요. 지아의 수첩에는 경찰 팀 전체의 결과가 와요. <em class="say">🚨 9번 서연님은 마피아입니다! (내 조사)<br>🚓 7번 예준님은 마피아가 아닙니다. (다른 경찰의 조사)</em></div></div>
+    <div class="beat"><div class="when"><b>2일 밀담</b></div><div>유령 민수가 돌아다니며 말해요. “내가 투시해 봤는데 하윤이 마피아야.” 진짜 의사인 하윤에게 누명을 씌우는 작전이에요. 한편 지아는 서연이 마피아라는 걸 언제 밝힐지 고민해요. 마을은 누구 말을 믿을까요?</div></div>
+    <div class="beat"><div class="when"><b>2일 밤</b></div><div>학살이 시작돼요. 살아 있는 마피아 5명이 각자 1명씩 골라요. 의사 3명이 지킨 사람 중 2명이 노림을 받아 살아남았어요.
+      <em class="say">🌙 지난밤 7번 예준, 15번 도윤, 21번 수아님이 마피아에게 암살당했습니다.</em></div></div>
+  </div>
+</div></section>
+
+<!-- 약속 -->
+<section id="promise" data-sky="dusk"><div class="wrap">
+  <h2>우리의 약속</h2>
+  <div class="grid2 mt">
+    <div class="card no"><h3>🚫 금지</h3>
+      <ul class="dos"><li>밀담, 광장 재판 중에 휴대폰 꺼내기 (지명·판정 투표 때만 꺼내요)</li><li>내 휴대폰 화면을 친구에게 보여 주기</li><li>남의 휴대폰 화면 엿보기</li><li>엎드린 유령이 고개를 들거나 말하기</li><li>친구를 밀치거나 교실 밖으로 나가기</li></ul></div>
+    <div class="card yes"><h3>⭕ 얼마든지 OK</h3>
+      <ul class="dos"><li>거짓말과 연기 (게임 안에서만!)</li><li>다른 직업인 척하기</li><li>동맹 맺기, 그리고 배신하기</li><li>유령이 본 것을 말하거나 숨기거나 꾸며 내기</li></ul></div>
+  </div>
+  <p class="mt muted">게임이 끝나면 모든 의심과 배신은 게임 속 이야기로 끝내요. 친구가 나를 처형했다고 서운해하기 없기!</p>
+</div></section>
+
+<!-- FAQ -->
+<section id="faq" data-sky="dusk"><div class="wrap">
+  <h2>자주 묻는 질문</h2>
+  <details class="q"><summary>처형 후보는 꼭 ‘남은 마피아 수’만큼이에요?</summary><p>네. 득표 상위 순서대로 그만큼 뽑아요. 마지막 자리에서 표가 같으면 (1표끼리 같아도) 동점자끼리 결선 투표를 하고, 또 같으면 다시 결선을 해요. 표를 받은 사람이 그보다 적어도 후보가 적어져요.</p></details>
+  <details class="q"><summary>경찰이 여러 명이면 어떻게 돼요?</summary><p>경찰끼리는 서로 누가 경찰인지 몰라요. 대신 밤마다 모든 경찰의 조사 결과가 경찰 전원의 수첩에 와요 (내 조사인지, 다른 경찰의 조사인지도 표시돼요). 밤에는 다른 경찰이 고른 사람에 ‘경찰 선택’ 표시가 떠서 겹치지 않게 나눠 조사할 수 있어요. 누군가 “나 경찰이야”라고 하면, 진짜 경찰은 그 사람이 말하는 결과가 내 수첩과 맞는지로 진짜인지 가려낼 수 있어요.</p></details>
+  <details class="q"><summary>과반수는 몇 표예요?</summary><p>그 후보를 뺀 살아 있는 사람의 절반을 넘어야 해요. 살아 있는 사람이 21명이면 후보를 뺀 20명 중 11표 이상이 ‘처형’이어야 처형돼요. 휴대폰과 선생님 화면에 몇 표가 필요한지 나와요.</p></details>
+  <details class="q"><summary>후보가 여러 명 다 처형될 수도 있어요?</summary><p>네. 후보마다 따로 판정하니까, 모두 과반수를 넘으면 모두 처형돼요. 반대로 아무도 처형되지 않을 수도 있어요.</p></details>
+  <details class="q"><summary>처형된 사람의 직업은 언제 알 수 있어요?</summary><p>게임이 끝날 때까지 공개되지 않아요. 다음 날 아침 ‘남은 마피아’ 숫자가 줄었는지 보고 추리해야 해요.</p></details>
+  <details class="q"><summary>처형된 유령이 편을 안 고르면요?</summary><p>편을 골라야 영혼 투시를 쓸 수 있어요. 끝까지 고르지 않으면 시민 편으로 처리돼요. 암살당한 사람은 고를 필요 없이 바로 정해져요 (마피아가 아니었다면 시민 편, 마피아였다면 마피아 편).</p></details>
+  <details class="q"><summary>마피아 여러 명이 같은 사람을 고르면요?</summary><p>그 사람만 죽어요. 마피아는 각자 1명씩 고르는데, 겹치면 그만큼 죽는 사람이 줄어요. 휴대폰에 동료가 고른 사람이 표시되니 나눠 고르세요.</p></details>
+  <details class="q"><summary>마피아가 동료 마피아를 암살하면요?</summary><p>그 마피아는 마피아 편 유령이 돼요. 마피아 수가 줄어 손해지만, 의심받는 동료를 정리하거나 “밤에 죽었으니 시민이었을 것”이라는 믿음을 이용해 마을을 헷갈리게 만들 수 있어요.</p></details>
+  <details class="q"><summary>경찰이 밤에 암살당하면 조사 결과는요?</summary><p>그날 밤 조사 결과는 그대로 수첩에 오고, 그 경찰은 바로 시민 편 유령이 돼요. 그 결과를 밀담에서 말할 수 있어요. 남은 경찰들은 계속 서로의 결과를 공유해요.</p></details>
+  <details class="q"><summary>휴대폰 화면이 꺼지거나 창을 닫았어요.</summary><p>같은 휴대폰으로 다시 접속하면 그대로 이어져요. 안 되면 입장 화면의 ‘이미 들어왔었는데 화면이 꺼졌나요?’를 누르고 선생님께 받은 재입장 코드 3자리를 넣으세요.</p></details>
+</div></section>
+
+<!-- 선생님용 -->
+<section id="teacher" data-sky="night"><div class="wrap teacher">
+  <h2>선생님용 진행 메모</h2>
+  <div class="card">
+    <h3>시간 배분 (24명 기준)</h3>
+    <table>
+      <tr><th>0~5분</th><td>이 안내서 또는 게임 안 ‘📖 규칙 설명’ 슬라이드로 설명</td></tr>
+      <tr><th>5~8분</th><td>QR 입장, 직업 확인. 선생님 화면의 집에 ✓가 모두 뜨면 넘기세요.</td></tr>
+      <tr><th>8~40분</th><td>플레이. 시간 제한 없이 선생님이 화면 아래 <b>▶ 다음</b> 버튼(또는 키보드 →, 발표용 리모컨)으로 넘겨요. 권장 속도는 밀담 1~2분, 토론 1분, 투표 단계는 ✓가 다 뜨면, 최후의 발언 1명당 15초 정도예요. 이 속도면 첫날 약 6분, 사람이 줄수록 짧아지고 보통 5~7일 안에 끝나요.</td></tr>
+      <tr><th>마무리</th><td>결과 발표, 정체 공개, 상 발표</td></tr>
+    </table>
+  </div>
+  <div class="card mt balance">
+    <h3>구성을 정한 방법</h3>
+    <table>
+      <tr><th>마피아 2~7명 (인원의 약 1/4)</th><td>둘째 밤부터 마피아 수만큼 암살하고, 처형 후보 수도 마피아 수와 같아서 마피아 수가 게임 속도와 승률을 가장 크게 좌우해요.</td></tr>
+      <tr><th>경찰 1~4명 (경찰 팀)</th><td>결과를 공유하는 경찰 팀이라 시민이 방향을 잡기 쉬워요. 서로 누군지는 모르게 해서, 경찰들이 한꺼번에 정체를 드러내 몰살당하는 일을 막았어요.</td></tr>
+      <tr><th>의사 1~4명</th><td>밤마다 여러 명이 죽는 만큼 의사를 넉넉히 두었어요. 의사가 많을수록 정체를 밝힌 경찰을 지켜 줄 수 있어요.</td></tr>
+    </table>
+    <p class="muted mt">학생 행동을 단순하게 만든 추리 모형으로 인원마다 수백 판씩 돌렸을 때, 인원마다 마피아·경찰·의사 수를 바꿔 가며 900판씩 확인했고, 보통 실력 기준으로 시민 승률이 모든 인원에서 46~55%가 되도록 맞췄어요. 실제 학생들은 다를 수 있으니, 첫 판 뒤 로비의 ⚙️ 게임 설정에서 마피아 수를 한 명씩 조정해 보세요. 마피아 1명이 승률을 15~25%p 정도 움직여요.</p>
+  </div>
+  <div class="grid2 mt">
+    <div class="card"><h3>진행 중 쓸 수 있는 버튼</h3>
+      <ul class="dos"><li>▶ 다음 단계 (키보드 →, PageDown, 발표용 리모컨도 됨)</li><li>최후의 발언은 화면에 후보 목록만 나와요. 한 명씩 불러 말을 들은 뒤 ‘최종 판정으로’</li><li>투표·밤 단계에서는 모두 제출하면 ‘✓ 모두 제출했어요’ 표시. 제출 안 한 사람은 기권 처리</li><li>화면 오른쪽 위 시계는 그 단계가 시작된 뒤 흐른 시간 (참고용)</li><li>👁 관리자 명단: 모두의 직업, 유령의 편, 재입장 코드. <b>프로젝터에 비치지 않게 주의</b></li><li>게임 중단: 정체를 공개하고 끝냄</li></ul></div>
+    <div class="card"><h3>로비의 ⚙️ 게임 설정</h3>
+      <ul class="dos"><li>마피아·경찰·의사 인원 (기본은 인원에 맞춘 자동 추천)</li><li>경찰 1명이 밤마다 조사할 인원</li></ul></div>
+  </div>
+</div></section>
+
+<footer class="wrap"><b>준비됐나요?</b>휴대폰을 꺼내 선생님 화면의 QR을 찍으세요.</footer>
+</main>
+
+<script>
+const PHASES = [
+  { sky:'day', name:'📵 밀담', w:80, phone:false,
+    pts:['휴대폰을 주머니에 넣고 자리에서 일어나요.','교실을 돌아다니며 자유롭게 이야기해요. 누가 수상한지 살펴보세요.','👻 유령도 밀담에 참여해요. 유령의 말을 믿을지는 여러분의 판단!'],
+    scr:'pocket', cap:'휴대폰은 이 화면 그대로 주머니 속에' },
+  { sky:'day', name:'🏛️ 광장 토론', w:50, phone:false,
+    pts:['자리로 돌아와 앉아요.','의심 가는 사람을 손들고 지목하고 이유를 말해요. 지목받은 사람은 변론해요.','💤 유령은 지금부터 판결까지 책상에 엎드려요.'],
+    scr:'court', cap:'아직 휴대폰은 넣어 둬요' },
+  { sky:'dusk', name:'🗳️ 후보 지명', w:40, phone:true,
+    pts:['휴대폰을 꺼내 가장 의심 가는 사람 1명을 골라요.','득표 상위 ‘남은 마피아 수’명이 처형 후보가 돼요.','마지막 자리에서 동점이면 🔁 결선 투표로 동점자끼리 다시 겨뤄요.','유령은 투표하지 않아요.'],
+    scr:'vote', cap:'처형 후보 1명 지명하기' },
+  { sky:'dusk', name:'🎤 최후의 발언', w:50, phone:false,
+    pts:['선생님 화면에 후보와 받은 표가 나와요.','사회자가 한 명씩 불러 한마디씩 들어요.','나머지는 잘 듣고 판정을 준비해요.'],
+    scr:'defense', cap:'내가 후보가 되면 이렇게 알려 줘요' },
+  { sky:'dusk', name:'⚖️ 최종 판정', w:40, phone:true,
+    pts:['후보마다 ‘처형’ 또는 ‘살림’을 골라요.','처형이 과반수면 처형돼요. 고르지 않으면 ‘살림’으로 세요.','자기 자신에게는 투표할 수 없어요.'],
+    scr:'judge', cap:'후보마다 처형 또는 살림' },
+  { sky:'dusk', name:'🔨 판결', w:30, phone:false,
+    pts:['선생님 화면에 후보마다 처형·살림 표 수와 결과가 나와요.','처형된 사람의 정체는 공개되지 않아요.','처형된 사람은 유령이 되어 편을 골라요.'],
+    scr:'verdict', cap:'모두 함께 선생님 화면을 봐요' },
+  { sky:'night', name:'🌙 밤', w:45, phone:true,
+    pts:['고개를 숙이고 화면을 손으로 가려요. <b>모두</b> 휴대폰을 만져요.','첫날 밤은 마피아가 서로를 확인만 해요. 둘째 밤부터 마피아는 <b>각자 1명씩</b> 암살, 경찰은 조사, 의사는 보호. 살아 있는 사람은 모두 ‘가장 의심 가는 사람’도 골라요.','👻 유령은 영혼 투시(게임 중 단 한 번)로 1명의 직업을 볼 수 있어요.'],
+    scr:'night', cap:'경찰의 밤 화면 예시' },
+  { sky:'dawn', name:'☀️ 아침', w:30, phone:true,
+    pts:['지난밤 희생자, 살아 있는 사람 수, 남은 마피아 수가 발표돼요.','📒 수첩에서 나만 아는 결과를 확인해요.','곧 밀담이에요. 휴대폰을 넣을 준비!'],
+    scr:'morning', cap:'아침 소식과 나만 아는 결과' }
+];
+const NAMES=['지아','서준','하윤','민수','도윤','서연','예준','하린','시우'];
+const chipsHTML = (on, n=9, start=0) => '<div class="chips">'+NAMES.slice(start,start+n).map((x,i)=>`<i class="${on.includes(i+start)?'on':''}">${i+start+2}<br>${x}</i>`).join('')+'</div>';
+const bar = (ph, t, ghost) => `<div class="sbar"><span><span class="n">1</span>나${ghost?' 👻':''}</span><span style="opacity:.8">2일차 · ${ph}</span></div>`;
+const jrow = (n, nm, k) => `<div style="display:grid;grid-template-columns:1fr 46px 46px;gap:4px;align-items:center;background:#FBE1CE;border-radius:9px;padding:4px 4px 4px 8px;margin-top:4px"><b style="font-size:11px">${n} ${nm}</b><i style="font-style:normal;text-align:center;border-radius:7px;padding:4px 0;font-weight:800;${k==='k'?'background:#D7425E;color:#fff':'background:#fff'}">처형</i><i style="font-style:normal;text-align:center;border-radius:7px;padding:4px 0;font-weight:800;${k==='s'?'background:#3E7BE6;color:#fff':'background:#fff'}">살림</i></div>`;
+const SCREENS = {
+  pocket: () => `<div class="screen light" style="--scr:#BFE3F0;--sfg:#1C2142">${bar('밀담','1:04')}<div class="pocket"><div><div class="big">📵</div><b>휴대폰을 넣고 일어나세요</b>교실을 돌아다니며 친구들과 이야기하세요. 유령도 대화에 끼어들 수 있어요.</div></div></div>`,
+  court: () => `<div class="screen light" style="--scr:#BFE3F0;--sfg:#1C2142">${bar('광장 토론','0:32')}<div class="pocket"><div><div class="big">🏛️</div><b>자리로 돌아와 광장 토론!</b>곧 처형 후보 4명을 뽑아요.</div></div></div>`,
+  vote: () => `<div class="screen light">${bar('후보 지명','0:31')}<div class="sc"><h4>🗳️ 처형 후보 지명</h4><div class="m">득표 상위 4명이 처형 후보가 돼요</div>${chipsHTML([1],9)}<div class="chips"><i style="grid-column:span 3">기권</i></div></div><div class="sbtn">제출하기</div></div>`,
+  defense: () => `<div class="screen light">${bar('최후의 발언','0:52')}<div class="sc" style="box-shadow:inset 0 0 0 2px #D7425E"><h4>🎤 당신은 후보예요</h4></div><div class="sc"><h4>처형 후보</h4>3번 서준 · 5표<br>1번 나 · 4표<br>8번 하린 · 3표<br>15번 도윤 · 3표 (결선 6표)</div></div>`,
+  judge: () => `<div class="screen light">${bar('최종 판정','0:28')}<div class="sc"><h4>⚖️ 최종 판정</h4><div class="m">처형 11표 이상이면 처형</div>${jrow(3,'서준','k')}${jrow(8,'하린','s')}${jrow(15,'도윤','')}</div><div class="sbtn">제출하기</div></div>`,
+  verdict: () => `<div class="screen light">${bar('판결','0:18')}<div class="sc" style="text-align:center"><div style="font-family:var(--fd);font-size:20px">3번 서준</div><b style="color:#D7425E">처형 14 · 살림 6 → 처형</b></div><div class="sc" style="text-align:center"><div style="font-family:var(--fd);font-size:20px">8번 하린</div><b style="color:#3E7BE6">처형 8 · 살림 12 → 생존</b></div><div class="m" style="text-align:center">정체는 공개되지 않아요</div></div>`,
+  night: () => `<div class="screen">${bar('밤','0:37')}<div class="sc"><h4>🚓 조사할 사람 1/1</h4><div class="m">결과는 아침에 수첩으로 와요</div>${chipsHTML([2],6)}</div><div class="sc"><h4>🤔 가장 의심 가는 사람</h4>${chipsHTML([1],6)}</div><div class="sbtn">다 골랐어요</div></div>`,
+  morning: () => `<div class="screen dawn">${bar('아침','0:19')}<div class="sc"><b style="color:#D7425E">🌙 지난밤 12번 시우님이 마피아에게 암살당했습니다.</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><div style="background:#F7E9D6;border-radius:9px;padding:6px"><b style="font-family:var(--fd);font-size:22px">19</b><div class="m">살아 있는 사람</div></div><div style="background:#F7E9D6;border-radius:9px;padding:6px"><b style="font-family:var(--fd);font-size:22px;color:#D7425E">4</b><div class="m">남은 마피아</div></div></div></div><div class="sc"><h4>📒 밤사이 알게 된 것</h4>🚨 4번 하윤님은 마피아입니다!</div></div>`,
+  ghost: () => `<div class="screen">${bar('밤','0:40',true)}<div class="sc"><h4>👁 영혼 투시</h4><div class="m">🔪 마피아: 3번 서준, 9번 서연, 12번 시우</div><div style="text-align:center;padding:8px 0">4번 하윤님은<br><b style="font-family:var(--fd);font-size:22px">💉 의사예요</b></div></div><div class="sc"><div class="m">본 것은 내일 밀담에서 말해도 되고, 숨기거나 거짓으로 말해도 돼요.</div></div><div class="sbtn">다 했어요</div></div>`
+};
+let cur = 0, inDay = false;
+function drawStage(i){
+  cur = i; const p = PHASES[i];
+  document.getElementById('tl').innerHTML = PHASES.map((x,j)=>`<button role="tab" aria-selected="${j===i}" class="${j===i?'on':''}" style="--w:${x.w}" data-i="${j}"><b>${x.name}</b><small>${x.phone ? '📱 꺼냄' : '🤐 넣음'}</small></button>`).join('');
+  document.getElementById('stage').innerHTML = `<div><h3>${p.name}</h3>
+    <span class="phone-tag ${p.phone?'out':'in'}">${p.phone?'📱 휴대폰 꺼내기':'🤐 휴대폰 넣어 두기'}</span>
+    <ul>${p.pts.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <div class="stage-nav"><button data-step="-1" ${i===0?'disabled':''}>이전 단계</button><button data-step="1">${i===PHASES.length-1?'처음으로':'다음 단계'}</button></div></div>
+    <div><div class="phone">${SCREENS[p.scr]()}</div><p class="cap">${p.cap}</p></div>`;
+  if (inDay) setSky(p.sky);
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-i]'); if (t) return drawStage(+t.dataset.i);
+  const s = e.target.closest('[data-step]'); if (s) drawStage((cur + +s.dataset.step + PHASES.length) % PHASES.length);
+});
+document.getElementById('ghostPhone').innerHTML = SCREENS.ghost();
+
+const COMP_BY_N = {10:[3,2,1],11:[3,1,3],12:[3,1,2],13:[3,1,2],14:[4,2,2],15:[4,2,2],16:[5,3,2],17:[4,2,2],18:[5,3,2],19:[5,2,3],20:[5,2,3],21:[5,2,3],22:[5,2,3],23:[6,3,3],24:[6,3,3],25:[6,3,3],26:[6,3,2],27:[6,3,2],28:[6,3,2],29:[7,4,3],30:[7,3,4]};
+const DAYS = {10:3.6,12:3.9,14:4.4,16:4.5,18:5.1,20:5.2,22:5.6,24:5.9,26:6.2,28:6.5,30:6.8};
+function compOf(n){ const r = COMP_BY_N[Math.max(10, Math.min(30, n))]; return { mafia: r[0], police: r[1], doctor: r[2], citizen: n - r[0] - r[1] - r[2] }; }
+function daysOf(n){ const ks = Object.keys(DAYS).map(Number); let k = ks[0]; for (const x of ks) if (n >= x) k = x; return DAYS[k]; }
+function minutesOf(n){
+  const c = compOf(n); const days = Math.round(daysOf(n)); let s = 60 + 60; // 직업 확인 + 여유
+  for (let d = 0; d < days; d++) { const r = Math.max(0.5, 1 - d / (days + 1)); s += (80 + 50) * r + 32 + 15 * Math.max(1, c.mafia - Math.floor(d / 2)) + 32 + 25 + 36 + 25; }
+  return Math.round(s / 60 / 5) * 5;
+}
+const ROLES = [
+  ['🔪','마피아',5,'maf','첫날 낮에는 동료를 몰라요. <b>첫날 밤</b>에 서로를 확인하고, <b>둘째 밤부터</b> 살아 있는 마피아가 각자 1명씩 암살해요.','휴대폰에서 동료가 누구를 골랐는지 보여요. 같은 사람을 고르면 한 명만 죽으니 나눠 고르세요. 동료 마피아를 희생시킬 수도 있어요.'],
+  ['🚓','경찰',2,'cit','밤마다 1명을 골라 마피아인지 조사해요. 결과는 아침에 수첩으로 와요.','경찰이라고 밝히면 마피아의 표적이 돼요. 언제, 누구에게 알릴지가 승부처!'],
+  ['💉','의사',1,'cit','둘째 밤부터 밤마다 1명을 골라 마피아의 암살에서 지켜요. 나 자신도 지킬 수 있어요.','첫날 밤은 암살이 없어서 쉬어요. 같은 사람을 이틀 연속 지킬 수는 없어요.'],
+  ['🙂','시민',16,'cit','능력은 없지만 대화와 추리가 가장 큰 무기예요.','밤에는 ‘가장 의심 가는 사람’을 몰래 골라 아침의 의심 순위를 만들어요.']
+];
+function drawRoles(c){
+  ROLES[0][2] = c.mafia; ROLES[1][2] = c.police; ROLES[2][2] = c.doctor; ROLES[3][2] = c.citizen;
+  ROLES[1][4] = c.police > 1
+    ? `경찰이 ${c.police}명인 <b>경찰 팀</b>이에요. 서로 누가 경찰인지는 모르지만, 밤마다 <b>모든 경찰의 조사 결과가 경찰 전원에게 공유</b>돼요. 각자 1명씩 조사해요.`
+    : '밤마다 1명을 골라 마피아인지 조사해요. 결과는 아침에 수첩으로 와요.';
+  ROLES[1][5] = c.police > 1 ? '밤에는 다른 경찰이 고른 사람에 ‘경찰 선택’ 표시가 떠요. 겹치지 않게 나눠 조사하세요. 경찰이라고 밝히면 마피아의 표적이 돼요.' : '경찰이라고 밝히면 마피아의 표적이 돼요. 언제, 누구에게 알릴지가 승부처!';
+  document.getElementById('roleGrid').innerHTML = ROLES.map(r => `<div class="role ${r[3]}"><div class="top"><span class="e">${r[0]}</span><span class="cnt">${r[2]}명</span></div>
+  <h3>${r[1]}</h3><span class="pill ${r[3]}" style="justify-self:start">${r[3]==='maf'?'마피아 편':'시민 편'}</span><p>${r[4]}</p><p class="tip">${r[5]}</p></div>`).join('');
+}
+function drawTable(n){
+  // 같은 구성이 이어지는 인원끼리 묶어서 표시
+  const rows = []; for (let k = 10; k <= 30; k++) { const c = compOf(k), last = rows[rows.length - 1];
+    if (last && last.c.mafia === c.mafia && last.c.police === c.police && last.c.doctor === c.doctor) last.b = k; else rows.push({ a: k, b: k, c }); }
+  document.getElementById('ctable').innerHTML = '<tr><th>인원</th><th>🔪 마피아</th><th>🚓 경찰</th><th>💉 의사</th><th>🙂 시민</th></tr>' +
+    rows.map(({a,b,c}) => { const d = compOf(b); return `<tr class="${n>=a&&n<=b?'on':''}"><td>${a === b ? a : a + '~' + b}명</td><td class="m">${c.mafia}</td><td>${c.police}</td><td>${c.doctor}</td><td>${c.citizen === d.citizen ? c.citizen : c.citizen + '~' + d.citizen}</td></tr>`; }).join('');
+}
+let N = 24;
+try { const v = +localStorage.getItem('mafiaGuideN'); if (v >= 10 && v <= 30) N = v; } catch (e) {}
+function setN(n){
+  N = Math.max(10, Math.min(30, n)); const c = compOf(N);
+  try { localStorage.setItem('mafiaGuideN', N); } catch (e) {}
+  const d = daysOf(N);
+  const vals = { n: N, mafia: c.mafia, police: c.police, doctor: c.doctor, citizen: c.citizen, need: Math.floor((N - 1) / 2) + 1, min: minutesOf(N), days: `${Math.max(2, Math.round(d - 1))}~${Math.round(d + 1)}` };
+  document.querySelectorAll('[data-v]').forEach(el => { if (el.dataset.v in vals) el.textContent = vals[el.dataset.v]; });
+  const r = document.getElementById('pkRange'); if (r && +r.value !== N) r.value = N;
+  drawRoles(c); drawTable(N);
+}
+document.getElementById('pkRange').addEventListener('input', e => setN(+e.target.value));
+document.querySelectorAll('.pk-btns button').forEach(b => b.addEventListener('click', () => setN(N + +b.dataset.d)));
+setN(N);
+
+function setSky(k){ if (document.body.className !== k) document.body.className = k; }
+const secs = [...document.querySelectorAll('[data-sky]')];
+const links = [...document.querySelectorAll('.toc a')];
+const io = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target; inDay = el.id === 'day';
+    setSky(inDay ? PHASES[cur].sky : el.dataset.sky);
+    links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + el.id));
+  });
+}, { rootMargin: '-45% 0px -50% 0px' });
+secs.forEach(s => io.observe(s));
+drawStage(0);
+</script>
+</body>
+</html>

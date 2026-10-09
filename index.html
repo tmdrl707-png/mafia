@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>마피아 마을</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --day:#BFE3F0; --dusk:#F2B98F; --dawn:#FBE3C8; --night:#1E2350;
+  --ink:#1C2142; --lamp:#F4C24D; --blood:#D7425E; --ghost:#5FCFAE; --cit:#3E7BE6;
+  --fd:'Black Han Sans','Pretendard','Apple SD Gothic Neo',sans-serif;
+  --fb:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{font-family:var(--fb);background:var(--bg);color:var(--fg);min-height:100vh;
+  transition:background-color 1.4s ease,color .9s ease;-webkit-tap-highlight-color:transparent;line-height:1.5;word-break:keep-all}
+body.day  {--bg:var(--day); --fg:var(--ink);--card:#fff;    --card2:#E4F2F8;--line:rgba(28,33,66,.14);--muted:#52608A;--hi:var(--lamp)}
+body.dusk {--bg:var(--dusk);--fg:#2B1D2E;   --card:#FFF6EE; --card2:#FBE1CE;--line:rgba(43,29,46,.15);--muted:#7B5856;--hi:#FFE08A}
+body.dawn {--bg:var(--dawn);--fg:#2B2340;   --card:#FFFDF8; --card2:#F7E9D6;--line:rgba(43,35,64,.14);--muted:#76657A;--hi:var(--lamp)}
+body.night{--bg:var(--night);--fg:#EEF0FF;  --card:#2B3172; --card2:#252B66;--line:rgba(238,240,255,.15);--muted:#A9AFDD;--hi:var(--lamp)}
+
+/* 하늘: 해와 달 */
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#sky::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity 1.4s;
+  background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff 60%,transparent),radial-gradient(1px 1px at 28% 8%,#fff 60%,transparent),
+  radial-gradient(1.5px 1.5px at 45% 22%,#fff 60%,transparent),radial-gradient(1px 1px at 63% 12%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 82% 30%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 8% 48%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 37% 40%,#fff 60%,transparent),radial-gradient(1px 1px at 92% 55%,#fff 60%,transparent)}
+body.night #sky::before{opacity:.7}
+#orb{position:absolute;width:min(30vw,260px);aspect-ratio:1;border-radius:50%;right:-6vw;top:-8vw;transition:all 1.6s cubic-bezier(.6,0,.3,1)}
+body.day #orb{background:radial-gradient(circle,#FFE38A 0 55%,#FFD25E 56% 100%);box-shadow:0 0 90px 30px rgba(255,214,94,.45)}
+body.dusk #orb{background:#FF9F6E;box-shadow:0 0 80px 20px rgba(255,140,90,.4);top:auto;bottom:-10vw;right:8vw}
+body.dawn #orb{background:#FFE7B8;box-shadow:0 0 70px 20px rgba(255,231,184,.6);top:auto;bottom:-12vw;right:-4vw}
+body.night #orb{background:#F4F0DC;box-shadow:inset -28px -14px 0 0 #D9D3B8,0 0 60px 6px rgba(244,240,220,.18)}
+body.tv #orb{width:34vh;left:50%;right:auto;top:-19vh;bottom:auto;transform:translateX(-50%)}
+body.tv.dusk #orb,body.tv.dawn #orb{top:-25vh;bottom:auto;right:auto}
+#app{position:relative;z-index:1}
+
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+input{font:inherit}
+.muted{color:var(--muted)}
+h1,h2,h3{font-weight:800;line-height:1.25}
+
+/* ========== 입장 화면 ========== */
+.E{max-width:440px;margin:0 auto;padding:9vh 20px 40px}
+.E-title{font-family:var(--fd);font-weight:400;font-size:56px;line-height:1;letter-spacing:-.5px}
+.E-hero p{margin:14px 0 28px;color:var(--muted);font-size:16px}
+.E-card{background:var(--card);border-radius:22px;padding:22px;display:grid;gap:14px}
+.E-card label{display:grid;gap:6px;font-weight:700;font-size:14px}
+.E-card input{border:2px solid var(--line);background:var(--card2);color:var(--fg);border-radius:14px;padding:14px 16px;font-size:18px;outline:none}
+.E-card input:focus{border-color:var(--hi)}
+.E details{margin-top:6px}
+.E summary{cursor:pointer;color:var(--muted);font-size:14px;padding:6px 0}
+.E details .E-sub{display:grid;gap:10px;margin-top:8px}
+.err{color:var(--blood);font-weight:700;min-height:1.2em;font-size:14px}
+.E-teacher{margin-top:26px}
+.E-demo{margin-top:18px}
+.E-demo h3{font-size:18px}
+.E-card select{border:2px solid var(--line);background:var(--card2);color:var(--fg);border-radius:14px;padding:12px 14px;font-size:17px;font-family:var(--fb)}
+#demobar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;
+  display:none;gap:6px;align-items:center;background:#1C2142;color:#fff;border-radius:999px;padding:6px;box-shadow:0 6px 24px rgba(0,0,0,.3);max-width:calc(100vw - 16px);overflow-x:auto}
+body.demo #demobar{display:flex}
+body.demo #app{padding-bottom:76px}
+#demobar button{color:#fff;font-weight:800;font-size:13px;padding:9px 12px;border-radius:999px;white-space:nowrap}
+#demobar button.on{background:var(--lamp);color:#1C2142}
+#demobar .db-ph{font-size:12px;opacity:.75;padding:0 6px;white-space:nowrap}
+@media (max-width:520px){#demobar .db-ph{display:none}#demobar button{padding:9px 10px;font-size:12px}}
+.note{margin-top:18px;font-size:13px;color:var(--muted);background:var(--card2);padding:12px 14px;border-radius:12px}
+.btn{background:var(--lamp);color:#1C2142;font-weight:800;border-radius:16px;padding:14px 18px;font-size:17px}
+.btn.big{width:100%;padding:18px;font-size:19px}
+.btn.ghosty{background:var(--card2);color:var(--fg)}
+.resume{display:block;width:100%;margin-bottom:12px}
+
+/* ========== 선생님 화면 ========== */
+.T{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;gap:2.4vh;padding:3.2vh 3vw 2vh}
+.T-head{display:flex;align-items:flex-end;justify-content:space-between;gap:2vw}
+.T-title{font-family:var(--fd);font-weight:400;font-size:min(6.4vw,10vh);line-height:1}
+.T-sub{color:var(--muted);font-size:min(1.5vw,2.4vh);margin-top:1vh}
+.T-day{font-size:min(1.8vw,3vh);font-weight:800;color:var(--muted);display:flex;gap:12px;align-items:center}
+.T-day small{font-weight:600;font-size:.8em}
+.tag-final{background:var(--blood);color:#fff;border-radius:999px;padding:2px 12px;font-size:.8em}
+.T-phase{font-family:var(--fd);font-weight:400;font-size:min(6vw,9.5vh);line-height:1.05}
+.T-timer{font-family:var(--fd);font-size:min(11vw,17vh);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-2px}
+.T-timer.low{color:var(--blood)}
+.T-timer.paused{opacity:.4}
+.T-count{font-size:min(2vw,3.4vh);font-weight:700}
+.T-count b{font-family:var(--fd);font-weight:400;font-size:2.2em;margin-right:4px}
+.T-main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:3vw;min-height:0}
+.T-stage{min-width:0;display:flex;flex-direction:column;gap:2vh;font-size:min(1.7vw,2.9vh)}
+.lead{font-family:var(--fd);font-weight:400;font-size:min(3.3vw,5.6vh);line-height:1.15}
+.pts{list-style:none;display:grid;gap:1.2vh}
+.pts li{padding-left:1.3em;position:relative}
+.pts li::before{content:"";position:absolute;left:.2em;top:.62em;width:.42em;height:.42em;border-radius:50%;background:var(--hi)}
+.prog{font-family:var(--fd);font-size:min(3vw,5vh)}
+.prog small{font-family:var(--fb);font-size:.45em;color:var(--muted);margin-left:8px}
+.clues{background:var(--card);border-radius:20px;padding:2vh 1.6vw;display:grid;gap:1vh}
+.clues h3,.mo h3{font-size:.9em;color:var(--muted)}
+.wh p,.sus p{font-size:1em}
+.wh b{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:var(--fg);color:var(--bg);font-size:.8em;margin-right:6px;vertical-align:.1em}
+.wh small{color:var(--muted);font-size:.78em}
+.mo{display:grid;gap:1.6vh}
+.mo-line{font-family:var(--fd);font-weight:400;font-size:min(2.7vw,4.6vh);line-height:1.2}
+.mo-line.kill{color:var(--blood)}
+.mo-block{background:var(--card);border-radius:20px;padding:1.8vh 1.6vw;display:grid;gap:.8vh}
+.vd{display:grid;gap:1vh}
+.vd-name{font-family:var(--fd);font-size:min(5vw,8.5vh);line-height:1.05}
+.vd-name.none{font-size:min(3.4vw,6vh)}
+.vd-rev{font-size:min(2.4vw,4vh);font-weight:800}
+.vd-last{color:var(--muted)}
+.bars{display:grid;gap:.8vh;margin-top:1vh}
+.barr{display:grid;grid-template-columns:9em 1fr 2em;align-items:center;gap:10px;font-size:.92em}
+.barr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barr i{display:block;height:1.1em;border-radius:6px;background:var(--fg);width:var(--w);min-width:4px;opacity:.75}
+.barr b{text-align:right}
+.T-village{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.4vh 1vw;align-content:start}
+.tok{position:relative;aspect-ratio:1/1.08;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:22%;
+  clip-path:polygon(50% 0,100% 30%,100% 100%,0 100%,0 30%);transition:opacity .6s,background-color 1s}
+.tok b{font-family:var(--fd);font-weight:400;font-size:min(2.8vw,4.6vh);line-height:1}
+body.night .tok:not(.dead) b{color:var(--lamp);text-shadow:0 0 14px rgba(244,194,77,.55)}
+.tok span{font-size:min(1.15vw,1.9vh);font-weight:700;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tok.dead{opacity:.6;background:rgba(28,33,66,.10)}
+body.night .tok.dead{background:rgba(238,240,255,.07)}
+.tok .tk-sub{font-size:min(.95vw,1.5vh);color:var(--muted);font-style:normal}
+.tok .tk-ok{position:absolute;bottom:6%;right:10%;font-style:normal;font-weight:900;color:var(--ghost);font-size:min(1.4vw,2.2vh)}
+.tok .tk-bot{position:absolute;bottom:6%;left:10%;font-style:normal;font-size:min(.9vw,1.4vh);color:var(--muted)}
+.tok .tk-role{position:absolute;top:9%;left:50%;transform:translateX(-50%);font-style:normal;font-size:min(1.3vw,2.1vh)}
+.tok.t-mafia{background:#F6C6CF}
+body.night .tok.t-mafia{background:#6A2C4F}
+.tok[data-a]{cursor:pointer}
+.empty{grid-column:1/-1;color:var(--muted);padding:3vh 0}
+.T-ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;opacity:.5;transition:opacity .3s}
+.T-ctrl:hover,.T-ctrl:focus-within{opacity:1}
+.T-ctrl button{background:var(--card);border-radius:10px;padding:8px 14px;font-size:14px;font-weight:700}
+.T-ctrl button.primary{background:var(--lamp);color:#1C2142;padding:12px 26px;font-size:17px;opacity:1}
+.T-lobby .T-ctrl{opacity:1}
+.grow{flex:1}
+.sep{width:12px}
+.join{display:flex;gap:2vw;align-items:center;background:var(--card);border-radius:22px;padding:2vh 1.6vw}
+.qr{background:#fff;padding:10px;border-radius:14px;line-height:0;min-width:120px;min-height:120px}
+.qr img,.qr canvas{width:min(13vw,21vh)!important;height:auto!important}
+.join-code{font-family:var(--fd);font-size:min(7vw,12vh);line-height:1;letter-spacing:4px}
+.join-lbl{color:var(--muted);font-weight:700}
+.join-url{font-size:min(1.2vw,2vh);color:var(--muted);word-break:break-all;margin-top:.6vh}
+.set{background:var(--card);border-radius:20px;padding:1.4vh 1.4vw;font-size:14px}
+.set summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none}
+.set summary::-webkit-details-marker{display:none}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:12px}
+.set-row{display:flex;align-items:center;gap:8px}
+.set-row span{flex:1}
+.set-row b{min-width:2.6em;text-align:center}
+.set-row button{background:var(--card2);width:30px;height:30px;border-radius:9px;font-weight:900}
+.set h4{grid-column:1/-1;margin-top:10px;font-size:13px;color:var(--muted)}
+.seg{display:flex;gap:4px}
+.set-row.full{grid-column:1/-1}
+.seg button{white-space:nowrap}
+.seg button{background:var(--card2);border-radius:9px;padding:5px 10px;font-weight:700;font-size:13px}
+.seg button.on{background:var(--lamp);color:#1C2142}
+.set-row .seg button{width:auto;height:auto;padding:5px 12px;background:var(--card2)}
+.set-row .seg button.on{background:var(--lamp);color:#1C2142}
+.warn{color:var(--blood);font-weight:800}
+.end{display:grid;gap:1.6vh}
+.end-win{font-family:var(--fd);font-size:min(5.4vw,9vh);line-height:1.05}
+.aw{display:grid;grid-template-columns:1fr 1fr;gap:1.2vh 1.2vw}
+.aw div{background:var(--card);border-radius:16px;padding:1.4vh 1vw;display:grid;gap:2px}
+.aw span{font-size:1.4em}
+.aw small{color:var(--muted)}
+.aw em{font-style:normal;font-weight:700}
+.T-ctrl.solid{opacity:1}
+
+/* 오버레이 */
+.ov{position:fixed;inset:0;z-index:20;background:rgba(15,18,45,.72);display:grid;place-items:center;padding:4vh 4vw}
+.ov-box{background:var(--card);color:var(--fg);border-radius:24px;padding:3vh 2.4vw;max-width:1100px;width:100%;max-height:92vh;overflow:auto}
+.slide{min-height:62vh;display:flex;flex-direction:column;gap:3vh;justify-content:center;font-size:min(2.1vw,3.4vh)}
+.slide h2{font-family:var(--fd);font-weight:400;font-size:min(4.8vw,8vh);line-height:1.1}
+.slide .big{font-size:1.25em;font-weight:800}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:1vw}
+.flow div{background:var(--card2);border-radius:16px;padding:2vh 1vw;display:grid;gap:.6vh}
+.flow b{font-size:1.4em}
+.flow small{color:var(--muted);font-size:.8em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:2vw}
+.two div{background:var(--card2);border-radius:18px;padding:2.4vh 1.6vw}
+.rolegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vh 1.2vw;font-size:.82em}
+.rolegrid div{background:var(--card2);border-radius:14px;padding:1.4vh 1vw}
+.rolegrid b{display:block;font-size:1.1em}
+.sl-nav{display:flex;justify-content:space-between;align-items:center;margin-top:2vh}
+.sl-nav button{background:var(--card2);border-radius:12px;padding:10px 18px;font-weight:800}
+.adm{width:100%;border-collapse:collapse;font-size:15px}
+.adm th,.adm td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+.adm tr.dead td{opacity:.5}
+
+/* ========== 학생 화면 ========== */
+.S{max-width:520px;margin:0 auto;padding:0 14px 40px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+  padding:12px 4px;background:var(--bg);transition:background-color 1.4s}
+.bar .me{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .me b{font-family:var(--fd);font-weight:400;font-size:22px;margin-right:6px}
+.bar .ph{font-size:13px;color:var(--muted);font-weight:700;text-align:right;line-height:1.2}
+.bar .js-timer{display:none}
+.bar .js-timer.low{color:var(--blood)}
+.bar button{background:var(--card);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:800}
+.s-card{background:var(--card);border-radius:20px;padding:18px;margin-top:12px}
+.s-card h3{font-size:17px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.s-card h3 small{color:var(--muted);font-weight:700}
+.s-card p+p{margin-top:6px}
+.hero{text-align:center;padding:8vh 10px 2vh}
+.hero .big-num{font-family:var(--fd);font-size:96px;line-height:1}
+.hero h2{font-size:24px;margin-top:8px}
+.hero p{color:var(--muted);margin-top:8px}
+.pocket{text-align:center;padding:7vh 12px 3vh}
+.pocket .pi{font-size:84px;line-height:1}
+.pocket h2{font-family:var(--fd);font-weight:400;font-size:34px;line-height:1.15;margin-top:14px}
+.pocket p{margin-top:10px;color:var(--muted)}
+.rolecard{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;cursor:pointer;
+  border-radius:22px;background:var(--card2);min-height:200px;display:grid;place-items:center;text-align:center;padding:22px;position:relative}
+.rolecard .rc-face{display:none}
+.rolecard.show .rc-face{display:block}
+.rolecard.show .rc-cover{display:none}
+.rc-cover{color:var(--muted);font-weight:800;font-size:17px}
+.rc-cover i{display:block;font-style:normal;font-size:44px;margin-bottom:6px}
+.rc-emoji{font-size:60px;line-height:1}
+.rc-name{font-family:var(--fd);font-size:44px;line-height:1.1;margin-top:6px}
+.rc-team{display:inline-block;margin-top:6px;padding:2px 12px;border-radius:999px;font-weight:800;font-size:14px;background:var(--cit);color:#fff}
+.rc-team.mafia{background:var(--blood)}
+.rc-desc{margin-top:12px;text-align:left;font-size:15px}
+.codebox{margin-top:4px}
+.codebox p{font-size:15px}
+.codebox b{font-size:17px}
+.ok{color:#1E9E73;font-weight:900}
+.no{color:var(--blood);font-weight:900}
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.chip{background:var(--card2);border-radius:14px;padding:10px 6px;display:grid;gap:2px;justify-items:center;border:2px solid transparent;position:relative;min-height:62px}
+.chip b{font-family:var(--fd);font-weight:400;font-size:20px;line-height:1}
+.chip span{font-size:13px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.on{background:var(--lamp);color:#1C2142;border-color:#1C2142}
+.chip.wide{grid-column:span 3;min-height:48px;font-weight:800}
+.chip .pk{position:absolute;top:-8px;right:-4px;background:var(--blood);color:#fff;font-style:normal;font-size:10px;font-weight:800;border-radius:8px;padding:1px 6px}
+.chips .empty{grid-column:1/-1}
+.done-msg{text-align:center;color:var(--muted);font-weight:700;margin-top:10px}
+.sbtn{margin-top:16px}
+.news .mo-line{font-size:22px}
+.news p{margin-top:8px}
+.logs p{padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.logs p:last-child{border-bottom:none}
+.logs small{color:var(--muted);margin-right:6px;font-weight:700}
+.drawer{position:fixed;inset:0;z-index:30;background:rgba(15,18,45,.55);display:none}
+.drawer.open{display:block}
+.dr-in{position:absolute;inset:auto 0 0 0;max-height:88vh;overflow:auto;background:var(--bg);border-radius:24px 24px 0 0;padding:16px 14px calc(30px + env(safe-area-inset-bottom,0px))}
+.dr-top{display:flex;justify-content:space-between;align-items:center}
+.dr-top h2{font-size:20px}
+.dr-top button{background:var(--card);border-radius:12px;padding:8px 14px;font-weight:800}
+.mates{font-weight:700;margin-top:4px}
+.hint{text-align:center;color:var(--muted);margin-top:18px;font-weight:700}
+.endbox{text-align:center;padding:5vh 10px 1vh}
+.endbox .end-win{font-size:40px}
+.endbox .me-res{font-size:22px;font-weight:900;margin-top:10px}
+.rl p{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
+.rl p.m{color:var(--blood);font-weight:800}
+.S .vd-name{font-size:30px}.S .vd-name.none{font-size:24px}.S .vd-rev{font-size:18px}.S .bars{font-size:15px}.S .barr{grid-template-columns:7.5em 1fr 2em}
+
+@media (max-width:900px){
+  .T{padding:16px}
+  .T-main{grid-template-columns:1fr}
+  .T-village{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .T-stage{font-size:16px}
+  .flow{grid-template-columns:1fr 1fr}
+  .rolegrid{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---- 기본형 v3 ---- */
+#net{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--blood);color:#fff;font-weight:800;text-align:center;padding:8px 12px;transform:translateY(-100%);transition:transform .3s}
+#net.show{transform:none}
+.T-stage .sub{font-size:1.3em;color:var(--muted);font-weight:700}
+.T-stage .sub b{color:var(--fg)}
+.clist{display:grid;gap:10px}
+.citem{display:flex;flex-direction:column;gap:2px;background:var(--card);border-radius:16px;padding:12px 18px;box-shadow:inset 0 0 0 3px var(--blood)}
+.citem b{font-family:var(--fd);font-weight:400;font-size:24px;line-height:1.15}
+.citem span{font-weight:800;color:var(--blood);white-space:nowrap}
+.clist.big{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.clist.big .citem{padding:1.6vh 1.4vw}
+.clist.big .citem b{font-size:min(2.4vw,4.2vh)}
+.clist.big .citem span{font-size:min(2vw,3.4vh)}
+.S .citem{background:var(--card2)}
+.s-card h3 small{font-weight:700;color:var(--muted);font-size:14px}
+.T-clock{display:grid;justify-items:end;gap:2px}
+.T-clock .T-timer{font-size:min(5vw,8vh);opacity:.55;letter-spacing:0}
+.T-clock small{color:var(--muted);font-weight:700;font-size:min(1.1vw,1.8vh)}
+.T-ctrl{opacity:1}
+.T-ctrl button.primary.next{font-size:min(1.6vw,2.6vh);padding:1.4vh 2.2vw;border-radius:14px}
+.T-ctrl button.primary.next.ready{box-shadow:0 0 0 4px rgba(244,194,77,.45)}
+.readyhint{font-weight:800;color:var(--muted);font-size:14px;margin-right:6px}
+.readyhint.ok{color:#1E9E73}
+body.night .readyhint.ok{color:var(--ghost)}
+.set-note{grid-column:1/-1;color:var(--muted);font-size:13px;margin-top:8px}
+.spot-t small{font-family:var(--fb);font-size:.45em;color:var(--muted);font-weight:700}
+.E-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pill-s{display:inline-block;border-radius:999px;padding:2px 12px;font-size:.78em;font-weight:800;background:var(--card);color:var(--fg)}
+.pill-s.m{background:var(--blood);color:#fff}
+.T-day{flex-wrap:wrap}
+.T-village.many{grid-template-columns:repeat(8,minmax(0,1fr));gap:1vh .7vw}
+.T-village.many .tok b{font-size:min(2.2vw,3.6vh)}
+.T-village.many .tok span{font-size:min(.95vw,1.6vh)}
+.tok.cand{box-shadow:inset 0 0 0 4px var(--blood)}
+.tok .tk-cand.tie{background:var(--cit)}
+.cchip.tie{box-shadow:inset 0 0 0 3px var(--cit)}
+.tok.now{background:var(--lamp)!important;color:#1C2142}
+.tok.now b{color:#1C2142!important;text-shadow:none!important}
+.tok .tk-cand{position:absolute;top:12%;left:50%;transform:translateX(-50%);font-style:normal;font-weight:900;font-size:min(.95vw,1.5vh);background:var(--blood);color:#fff;border-radius:6px;padding:0 6px}
+.tok.t-citizen{background:#CFE0FF} body.night .tok.t-citizen{background:#2C4C9A}
+.stat2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat2 div{background:var(--card2);border-radius:16px;padding:1.4vh 1.2vw;display:grid}
+.clues .stat2 div{background:var(--card2)}
+.mo .stat2 div{background:var(--card)}
+.stat2 b{font-family:var(--fd);font-weight:400;font-size:min(4.6vw,7.5vh);line-height:1}
+.stat2 .m b{color:var(--blood)}
+.stat2 span{font-weight:800;color:var(--muted);font-size:.9em}
+.S .stat2 b{font-size:40px}
+.sus{font-size:.92em}
+.mo .safe,.clues .safe{color:inherit}
+.clues .kill{color:var(--blood);font-weight:800}
+.spot{display:grid;gap:1vh}
+.spot-lbl{font-weight:800;color:var(--muted)}
+.spot-name{font-family:var(--fd);font-weight:400;font-size:34px;line-height:1.05}
+.spot.big .spot-name{font-size:min(5.6vw,9vh)}
+.spot-t{font-family:var(--fd);font-weight:400;font-size:28px;color:var(--blood);font-variant-numeric:tabular-nums}
+.spot.big .spot-t{font-size:min(3.6vw,6vh)}
+.queue{list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.queue li{background:var(--card);border-radius:999px;padding:4px 14px;font-weight:700}
+.queue li.done{opacity:.4;text-decoration:line-through}
+.queue li.now{background:var(--lamp);color:#1C2142}
+.S .queue li{background:var(--card2)}
+.barr.in b,.barr.in span{color:var(--blood);font-weight:800}
+.barr.in i{background:var(--blood);opacity:1}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px}
+.cchip{background:var(--card);border-radius:12px;padding:6px 14px;font-weight:800;box-shadow:inset 0 0 0 3px var(--blood)}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.vgrid.big{gap:1.6vh 1.2vw}
+.vcard{background:var(--card);border-radius:18px;padding:14px 16px;display:grid;gap:8px;position:relative;overflow:hidden;
+  animation:vin .5s ease both;animation-delay:calc(var(--i) * .9s - var(--off, 0s))}
+.vc-name{font-family:var(--fd);font-weight:400;font-size:24px;line-height:1.1;padding-right:64px}
+.vgrid.big .vc-name{font-size:min(2vw,3.4vh)}
+.vc-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--card2)}
+.vc-bar i{display:block;width:var(--w)}
+.vc-bar .k{background:var(--blood)} .vc-bar .s{background:var(--cit)}
+.vc-n{display:flex;justify-content:space-between;font-weight:800;font-size:15px}
+.vc-stamp{position:absolute;top:10px;right:12px;font-family:var(--fd);font-size:22px;border:3px solid;border-radius:10px;padding:0 8px;transform:rotate(-8deg);
+  animation:stamp .35s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--i) * .9s + .6s - var(--off, 0s))}
+.vcard.ex .vc-stamp{color:var(--blood)} .vcard.sv .vc-stamp{color:#1E9E73}
+body.night .vcard.sv .vc-stamp{color:var(--ghost)}
+.vcard.ex{box-shadow:inset 0 0 0 3px var(--blood)}
+.vd-note{margin-top:10px;font-size:.85em}
+@keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes stamp{from{opacity:0;transform:scale(2.2) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(-8deg)}}
+.s-card.alert{box-shadow:inset 0 0 0 3px var(--blood)}
+.sidec h3{display:block}
+.sides{display:grid;gap:10px;margin-top:10px}
+.sidebtn{display:grid;gap:4px;text-align:left;background:var(--card2);border-radius:16px;padding:14px 16px;border:3px solid transparent}
+.sidebtn b{font-size:18px}
+.sidebtn span{font-size:14px;color:var(--muted)}
+.sidebtn.c.on{border-color:var(--cit)} .sidebtn.m.on{border-color:var(--blood)}
+.jlist{display:grid;gap:8px;margin-top:10px}
+.jrow{display:grid;grid-template-columns:1fr 84px 84px;gap:8px;align-items:center;background:var(--card2);border-radius:14px;padding:8px 8px 8px 14px}
+.jn{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jn b{font-family:var(--fd);font-weight:400;font-size:20px;margin-right:4px}
+.jb{border-radius:12px;padding:12px 4px;font-weight:900;background:var(--card);border:2px solid transparent}
+.jb.k.on{background:var(--blood);color:#fff}
+.jb.s.on{background:var(--cit);color:#fff}
+.look{background:var(--card2);border-radius:14px;padding:16px;font-size:17px;text-align:center;line-height:1.5;margin-top:10px}
+.look b{font-family:var(--fd);font-weight:400;font-size:28px}
+.look small{color:var(--muted);font-weight:700}
+.once{background:var(--card2);border-radius:12px;padding:10px 12px;margin:10px 0 4px;font-size:15px}
+.chip.off{opacity:.3}
+.chip .pk.ck{background:var(--muted)}
+.chip .pk.tp{background:var(--cit)}
+.chip.mate{box-shadow:inset 0 0 0 2px var(--blood)}
+.rolecard .mates{margin-top:10px;text-align:left}
+.rc-team.citizen{background:var(--cit)}
+.rc-team.mafia{background:var(--blood)}
+.T-stage .mo-line{font-size:min(2.6vw,4.4vh)}
+.mo-line.kill{color:var(--blood)}
+.T-stage .mo{gap:1.6vh}
+@media (prefers-reduced-motion:reduce){.vcard,.vc-stamp{animation:none}}
+</style>
+</head>
+<body class="night">
+<div id="sky"><div id="orb"></div></div>
+<main id="app"></main>
+<div id="overlay"></div>
+<div id="demobar"></div>
+<div id="net" role="status">⚠️ 연결이 끊겼어요. 다시 연결하는 중…</div>
+<script>
+'use strict';
+/* =====================================================================
+   마피아 마을 (기본형 v3) — 7~30명 교실용 마피아 게임
+   - 직업: 마피아 · 경찰 · 의사 · 시민
+   - 광장 재판: 후보 지명(남은 마피아 수만큼) → 최후의 발언 → 최종 판정(과반이면 처형)
+   - 처형된 사람의 정체는 비공개, 아침마다 생존 인원과 남은 마피아 수만 발표
+   - 죽은 사람은 유령: 마피아는 마피아 편, 그 밖의 사람은 편을 직접 고름
+     유령은 밀담에 참여하고 광장 재판 동안 엎드림, 밤마다 '영혼 투시'로 1명의 직업 확인
+   ===================================================================== */
+
+// ▼▼▼ 여기에 Firebase 콘솔의 설정값을 붙여 넣으세요 (null이면 이 브라우저 안에서만 테스트로 동작) ▼▼▼
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCSwzcuXXW-rC8bM6R9yt_Q0hLqw6KJFyY",
+  authDomain: "math-games-4b539.firebaseapp.com",
+  databaseURL: "https://math-games-4b539-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "math-games-4b539",
+  storageBucket: "math-games-4b539.firebasestorage.app",
+  messagingSenderId: "279115506008",
+  appId: "1:279115506008:web:866bcb741e1e2b6fb0c52d"
+};
+// ▲▲▲
+const TEACHER_PW = '0815';
+const ROOT = 'mafia';
+const MIN_PLAYERS = 10, MAX_PLAYERS = 30;
+
+/* ---------------- DB (Firebase 또는 로컬 테스트) ---------------- */
+const clean = v => (v === undefined ? null : JSON.parse(JSON.stringify(v)));
+const DB = (function () {
+  if (FIREBASE_CONFIG && window.firebase) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.database();
+    let offset = 0;
+    db.ref('.info/serverTimeOffset').on('value', s => { offset = s.val() || 0; });
+    const R = p => db.ref(ROOT + '/' + p);
+    return {
+      mode: 'firebase',
+      now: () => Date.now() + offset,
+      get: p => R(p).once('value').then(s => s.val()),
+      set: (p, v) => R(p).set(clean(v)),
+      update: (p, o) => R(p).update(clean(o)),
+      on: (p, cb) => { const r = R(p); const h = s => cb(s.val()); r.on('value', h); return () => r.off('value', h); },
+      remove: p => R(p).remove(),
+      onConn: cb => db.ref('.info/connected').on('value', s => cb(!!s.val()))
+    };
+  }
+  // ---- 로컬 테스트용: localStorage 공유 (같은 브라우저의 여러 탭). 저장소가 막혀 있으면 메모리에만 ----
+  const KEY = 'mafiaLocalDB3';
+  const load = () => { try { const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : {}; } catch (e) { return null; } };
+  let tree = load() || {};
+  const subs = new Set();
+  const segs = p => (ROOT + '/' + p).split('/').filter(Boolean);
+  const getAt = p => { let n = tree; for (const s of segs(p)) { if (n == null || typeof n !== 'object') return null; n = n[s]; } return n === undefined ? null : n; };
+  const prune = v => {
+    if (v === null || v === undefined) return null;
+    if (Array.isArray(v)) { const a = v.map(prune).filter(x => x !== null); return a.length ? a : null; }
+    if (typeof v === 'object') { const o = {}; for (const k in v) { const c = prune(v[k]); if (c !== null) o[k] = c; } return Object.keys(o).length ? o : null; }
+    return v;
+  };
+  const setAt = (p, v) => {
+    const ss = segs(p); v = prune(clean(v));
+    let n = tree;
+    for (let i = 0; i < ss.length - 1; i++) { if (n[ss[i]] == null || typeof n[ss[i]] !== 'object') n[ss[i]] = {}; n = n[ss[i]]; }
+    const last = ss[ss.length - 1];
+    if (v === null) delete n[last]; else n[last] = v;
+  };
+  const fire = () => {
+    for (const s of subs) {
+      const v = getAt(s.p); const j = JSON.stringify(v);
+      if (j !== s.last) { s.last = j; s.cb(v == null ? null : JSON.parse(j)); }
+    }
+  };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch (e) {} fire(); };
+  window.addEventListener('storage', e => { if (e.key === KEY) { tree = load() || tree; fire(); } });
+  return {
+    mode: 'local',
+    now: () => Date.now(),
+    get: p => Promise.resolve(clean(getAt(p))),
+    set: (p, v) => { tree = load() || tree; setAt(p, v); save(); return Promise.resolve(); },
+    update: (p, o) => {
+      const ks = Object.keys(o);
+      for (const a of ks) for (const b of ks) if (a !== b && b.startsWith(a + '/')) throw new Error('경로 충돌: ' + a + ' / ' + b);
+      tree = load() || tree; for (const k of ks) setAt(p + '/' + k, o[k]); save(); return Promise.resolve();
+    },
+    remove: p => { tree = load() || tree; setAt(p, null); save(); return Promise.resolve(); },
+    onConn: cb => cb(true),
+    on: (p, cb) => {
+      const s = { p, cb, last: JSON.stringify(getAt(p)) }; subs.add(s);
+      setTimeout(() => cb(clean(getAt(p))), 0);
+      return () => subs.delete(s);
+    }
+  };
+})();
+
+/* ---------------- 공통 도구 ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rid = n => Array.from({ length: n }, () => 'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 32)]).join('');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const arr = x => !x ? [] : Array.isArray(x) ? x.filter(v => v != null) : Object.values(x);
+const hasB = w => { w = String(w); const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
+const josa = (w, noB, withB) => w + (hasB(w) ? withB : noB);
+const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const memStore = (() => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; } }; })();
+const safeStore = get => { try { const s = get(); s.setItem('__t', '1'); s.removeItem('__t'); return s; } catch (e) { return memStore; } };
+const store = DB.mode === 'local' ? safeStore(() => sessionStorage) : safeStore(() => localStorage);
+
+/* ---------------- 게임 데이터 ---------------- */
+const ROLE_ORDER = ['mafia', 'police', 'doctor', 'citizen'];
+const ROLES = {
+  mafia:   { name: '마피아', team: 'mafia',   emoji: '🔪', short: '밤마다 동료와 함께 1명을 암살' },
+  police:  { name: '경찰',   team: 'citizen', emoji: '🚓', short: '밤마다 마피아인지 조사' },
+  doctor:  { name: '의사',   team: 'citizen', emoji: '💉', short: '밤마다 1명을 암살에서 지킴' },
+  citizen: { name: '시민',   team: 'citizen', emoji: '🙂', short: '대화와 추리로 마피아를 찾음' }
+};
+const SKILL = '영혼 투시';
+function roleDesc(r) {
+  const pk = ST().pk; const team = compNow().police > 1;
+  return {
+    mafia: '첫날 밤 동료 확인<br>둘째 밤부터 각자 1명 암살',
+    police: `밤마다 ${pk}명 조사${team ? '<br>결과는 경찰끼리 공유 (서로는 몰라요)' : ''}`,
+    doctor: '둘째 밤부터 1명 보호<br>같은 사람 연속 X',
+    citizen: '추리로 마피아를 찾아요'
+  }[r];
+}
+const LIMITS = { mafia: [1, 9], police: [0, 5], doctor: [0, 5] };
+const BOT_NAMES = ['다람쥐','부엉이','고슴도치','수달','너구리','펭귄','판다','여우','코알라','햄스터','오리','거북이','토끼','고래','사슴','두더지','미어캣','알파카','치타','물개','앵무새','하마','기린','족제비','고양이','강아지','다슬기','올빼미','청설모','호랑이'];
+const COURT = ['court', 'nominate', 'runoff', 'defense', 'judge', 'verdict'];
+const PH = {
+  lobby:    { name: '입장',        icon: '🏠', sky: 'night' },
+  role:     { name: '직업 확인',   icon: '📱', sky: 'night', phone: true },
+  talk:     { name: '밀담',        icon: '📵', sky: 'day' },
+  court:    { name: '광장 토론',   icon: '🏛️', sky: 'day' },
+  nominate: { name: '후보 지명',   icon: '🗳️', sky: 'dusk', phone: true },
+  runoff:   { name: '결선 투표',   icon: '🔁', sky: 'dusk', phone: true },
+  defense:  { name: '최후의 발언', icon: '🎤', sky: 'dusk' },
+  judge:    { name: '최종 판정',   icon: '⚖️', sky: 'dusk', phone: true },
+  verdict:  { name: '판결',        icon: '🔨', sky: 'dusk' },
+  night:    { name: '밤',          icon: '🌙', sky: 'night', phone: true },
+  morning:  { name: '아침',        icon: '☀️', sky: 'dawn', phone: true },
+  end:      { name: '게임 끝',     icon: '🏁', sky: 'night' }
+};
+
+// 인원별 추천 구성 [마피아, 경찰, 의사]: 인원마다 시뮬레이션해서 시민 승률이 50%에 가장 가까운 조합
+const COMP_BY_N = {10:[3,2,1],11:[3,1,3],12:[3,1,2],13:[3,1,2],14:[4,2,2],15:[4,2,2],16:[5,3,2],17:[4,2,2],18:[5,3,2],19:[5,2,3],20:[5,2,3],21:[5,2,3],22:[5,2,3],23:[6,3,3],24:[6,3,3],25:[6,3,3],26:[6,3,2],27:[6,3,2],28:[6,3,2],29:[7,4,3],30:[7,3,4]};
+function defaultComp(n) {
+  n = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, n || 24));
+  const r = COMP_BY_N[n];
+  return { mafia: r[0], police: r[1], doctor: r[2] };
+}
+function defaultSettings() {
+  return { comp: null, pk: 1 };
+}
+
+/* ---------------- 상태 ---------------- */
+const App = { mode: null, code: null, pid: null, hostId: null, active: false, busy: false, admin: false, demo: false, view: 'phone',
+              slides: false, slide: 0, sound: true, lastKey: '', hostKey: '', drawer: false, setOpen: false, lookSel: null, sideSel: null, unsub: [], timers: [] };
+let S = {};
+
+const ST = () => Object.assign(defaultSettings(), (S.meta && S.meta.settings) || {});
+const P = id => (S.players || {})[id] || {};
+const nm = id => P(id).name || '?';
+const num = id => P(id).num || '?';
+const who = id => `${num(id)}번 ${nm(id)}`;
+const sortedIds = () => Object.keys(S.players || {}).sort((a, b) => (P(a).num || 999) - (P(b).num || 999) || (P(a).joined || 0) - (P(b).joined || 0));
+const isAlive = id => P(id).alive !== false;
+const aliveIds = () => sortedIds().filter(isAlive);
+const deadIds = () => sortedIds().filter(id => !isAlive(id));
+const sec = id => (S.secret || {})[id] || {};
+const roleOf = id => sec(id).role || (S.pub && S.pub.end && S.pub.end.roles && S.pub.end.roles[id]) || null;
+const teamOf = id => { const r = roleOf(id); return r ? ROLES[r].team : null; };
+// 유령의 편: 마피아는 항상 마피아 편, 나머지는 스스로 고른 편 (아직 안 골랐으면 null)
+function sideOf(id) {
+  if (isAlive(id)) return teamOf(id);
+  if (roleOf(id) === 'mafia') return 'mafia';
+  const s = sec(id).side || (S.pub && S.pub.end && S.pub.end.sides && S.pub.end.sides[id] === 'mafia' ? 'm' : null);
+  return s === 'm' ? 'mafia' : s === 'c' ? 'citizen' : null;
+}
+const actDay = d => ((S.act || {})['d' + d]) || {};
+const roomPath = p => `rooms/${App.code}` + (p ? '/' + p : '');
+const compNow = () => ST().comp || defaultComp(Object.keys(S.players || {}).length);
+const status = () => (S.pub && S.pub.status) || { alive: aliveIds().length, mafia: compNow().mafia };
+const nomNow = () => { const n = S.pub && S.pub.nom; return n && S.meta && n.d === S.meta.day ? n : null; };
+const candsNow = () => (nomNow() ? arr(nomNow().cands) : []);
+const needKill = n => Math.floor(n / 2) + 1;
+const fmtUp = ms => fmt(ms);
+
+// 시간 제한은 없고, 사회자가 다음 단계로 넘김. 화면에는 이 단계가 시작된 뒤 흐른 시간만 참고로 보여 줌
+const elapsed = t => (t ? Math.max(0, DB.now() - t) : null);
+// 최후의 발언: 지금 말하는 후보 (사회자가 '다음 발언자'로 넘김)
+function speaker() { return null; } // 최후의 발언은 사회자가 진행 (발언자 구분 없음)
+function tickTimers() {
+  const m = S.meta; const ph = m && m.phase; const e = m && elapsed(m.startedAt);
+  document.querySelectorAll('.js-timer').forEach(el => { el.textContent = (e == null || ph === 'lobby' || ph === 'end') ? '' : fmt(e); });
+  const sp = speaker();
+  if (sp) document.querySelectorAll('.js-spk').forEach(el => { el.textContent = fmt(sp.el); });
+}
+function setSky(k) { document.body.className = (k || 'night') + (App.mode === 'teacher' ? ' tv' : '') + (App.demo ? ' demo' : ''); }
+function rerender() { if (App.demo) renderDemo(); else if (App.mode === 'teacher') renderTeacher(); else if (App.mode === 'student') renderStudent(); }
+
+/* =====================================================================
+   진행(호스트) 엔진 — 선생님 기기(또는 체험 모드)에서만 실행
+   ===================================================================== */
+function HS() {
+  const h = JSON.parse(JSON.stringify(S.hs || {}));
+  for (const k of ['susHits', 'lastProtect', 'saves', 'checked', 'finds', 'escapes', 'gFinds']) h[k] = h[k] || {};
+  return h;
+}
+function addLog(logs, id, d, ph, tx) {
+  if (!logs[id]) logs[id] = arr(sec(id).log).slice();
+  logs[id].push({ d, ph, tx });
+}
+function phaseUp(phase, day) {
+  const now = DB.now();
+  return { 'meta/phase': phase, 'meta/day': day, 'meta/startedAt': now, 'meta/spk': 0, 'meta/spkAt': now };
+}
+function winCheck(alive) {
+  const m = alive.filter(id => roleOf(id) === 'mafia').length;
+  if (m === 0) return { w: 'citizen', why: '마피아를 모두 찾아내 처형했습니다!' };
+  if (m >= alive.length - m) return { w: 'mafia', why: `살아 있는 마피아(${m}명)가 나머지 사람 수와 같아져 마을을 장악했습니다!` };
+  return null;
+}
+
+function startGameUpdates() {
+  const ids = sortedIds(); const n = ids.length; const st = ST();
+  const comp = Object.assign({}, st.comp || defaultComp(n));
+  let roles = [];
+  for (const r of ['mafia', 'police', 'doctor']) for (let i = 0; i < (comp[r] || 0); i++) roles.push(r);
+  if (roles.length > n) throw new Error('직업 수가 인원보다 많아요. 게임 설정에서 줄여 주세요.');
+  while (roles.length < n) roles.push('citizen');
+  roles = shuffle(roles);
+  if (App.demo && App.demoRole && App.demoRole !== 'random') {
+    const i = ids.indexOf(App.pid), j = roles.indexOf(App.demoRole);
+    if (i >= 0 && j >= 0) [roles[i], roles[j]] = [roles[j], roles[i]];
+  }
+  const mafiaIds = ids.filter((id, i) => roles[i] === 'mafia');
+  const up = { pub: null, act: null, choice: null };
+  const secret = {}; const act0 = {};
+  ids.forEach((id, i) => {
+    up[`players/${id}/num`] = i + 1; up[`players/${id}/alive`] = true; up[`players/${id}/death`] = null;
+    const r = roles[i];
+    const s = { role: r, log: [{ d: 0, ph: 's', tx: `게임이 시작됐어요. 당신은 ${ROLES[r].emoji} ${ROLES[r].name}!` }] };
+    if (r === 'mafia') s.log.push({ d: 0, ph: 's', tx: `🤫 이 마을의 마피아는 모두 ${mafiaIds.length}명. 동료가 누군지는 첫날 밤에 알게 돼요.` });
+    secret[id] = s;
+    if (P(id).bot) act0[id] = { ok: true };
+  });
+  up.secret = secret;
+  if (Object.keys(act0).length) up.act = { d0: act0 };
+  up.hs = { susHits: {} };
+  up.pub = { status: { day: 1, alive: n, mafia: comp.mafia } };
+  return Object.assign(up, phaseUp('role', 1));
+}
+
+/* ---- 봇 행동 (체험·테스트용) ---- */
+function botHot(d) {
+  const mo = S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null;
+  return mo ? arr(mo.suspects).map(s => s.id).filter(isAlive) : [];
+}
+function botNominateUpdates(d) {
+  const up = {}; const alive = aliveIds(); const hot = botHot(d);
+  for (const b of alive.filter(id => P(id).bot)) {
+    const pool = alive.filter(x => x !== b && !(d > 1 && roleOf(b) === 'mafia' && roleOf(x) === 'mafia'));
+    const hp = hot.filter(x => pool.includes(x));
+    const v = !pool.length || Math.random() < 0.06 ? 'skip' : (hp.length && Math.random() < 0.5 ? pick(hp) : pick(pool));
+    up[`act/d${d}/${b}/nv`] = v; up[`act/d${d}/${b}/nvd`] = true;
+  }
+  return up;
+}
+function botJudgeUpdates(d, cands) {
+  const up = {};
+  for (const b of aliveIds().filter(id => P(id).bot)) {
+    const j = {};
+    for (const c of cands) {
+      if (c === b) continue;
+      if (d > 1 && roleOf(b) === 'mafia') j[c] = roleOf(c) === 'mafia' ? 's' : (Math.random() < 0.9 ? 'k' : 's');
+      else j[c] = Math.random() < (roleOf(c) === 'mafia' ? 0.68 : 0.5) ? 'k' : 's';
+    }
+    up[`act/d${d}/${b}/j`] = j; up[`act/d${d}/${b}/jd`] = true;
+  }
+  return up;
+}
+// 첫날 밤: 마피아가 서로를 확인 (이미 처형된 마피아 유령도 함께 알게 됨)
+function mafiaMeetUpdates() {
+  const up = {}; const ms = sortedIds().filter(id => roleOf(id) === 'mafia');
+  for (const m of ms) {
+    const mates = ms.filter(x => x !== m);
+    up[`secret/${m}/mates`] = mates; up[`secret/${m}/met`] = true;
+    up[`secret/${m}/log`] = [...arr(sec(m).log), { d: 1, ph: 'n', tx: mates.length ? `🤝 첫날 밤, 마피아끼리 서로를 확인했어요. 동료: ${mates.map(x => who(x) + (isAlive(x) ? '' : ' 👻')).join(', ')}` : '🤝 이번 판의 마피아는 당신 혼자예요.' }];
+  }
+  return up;
+}
+function botNightUpdates(d) {
+  const up = {}; const alive = aliveIds(); const pk = ST().pk;
+  for (const b of sortedIds().filter(id => P(id).bot)) {
+    const base = `act/d${d}/${b}`; const sc = sec(b);
+    if (!isAlive(b)) {
+      if (alive.length && !arr(sc.looks).length && (Math.random() < 0.35 || alive.length <= 8)) {
+        const t = pick(alive);
+        up[base + '/look'] = t; up[`secret/${b}/looks`] = [{ d, t, r: roleOf(t) }];
+      }
+      up[base + '/nd'] = true; continue;
+    }
+    const r = sc.role; const others = alive.filter(x => x !== b);
+    if (r === 'mafia' && d > 1) { const t = alive.filter(x => x !== b && (roleOf(x) !== 'mafia' || Math.random() < 0.04)); if (t.length) up[base + '/n'] = pick(t); }
+    if (r === 'police') { const ck = new Set(arr(sc.checked)); let pool = others.filter(x => !ck.has(x)); if (!pool.length) pool = others; up[base + '/ns'] = shuffle(pool).slice(0, pk); }
+    if (r === 'doctor' && d > 1) { const pool = alive.filter(x => x !== sc.lastProtect); if (pool.length) up[base + '/n'] = pick(pool); }
+    const sp = others.filter(x => !(r === 'mafia' && roleOf(x) === 'mafia'));
+    if (sp.length) up[base + '/s'] = pick(sp);
+    up[base + '/nd'] = true;
+  }
+  return up;
+}
+
+/* ---- 광장 재판 ---- */
+function resolveNominateUpdates(d) {
+  const up = {}; const A = actDay(d); const alive = aliveIds(); const aliveSet = new Set(alive);
+  const tally = {}; let voters = 0;
+  for (const p of alive) {
+    const v = A[p] && A[p].nv; if (!v) continue; voters++;
+    if (v === 'skip' || v === p || !aliveSet.has(v)) continue;
+    tally[v] = (tally[v] || 0) + 1;
+  }
+  const K = Math.max(1, alive.filter(id => roleOf(id) === 'mafia').length);
+  const pk = topWithTie(tally, K);
+  up['pub/nom'] = { d, K, cands: pk.fixed, tied: pk.tied.length ? pk.tied : null, slots: pk.slots, voters, round: 1,
+    tally: Object.keys(tally).sort((a, b) => tally[b] - tally[a] || num(a) - num(b)).slice(0, Math.max(8, K + 3)).map(id => ({ id, c: tally[id] })) };
+  return { up, cands: pk.fixed, tied: pk.tied };
+}
+// 득표순 상위 K명. 경계에서 동점이라 K명을 넘으면, 확정된 사람(fixed)과 결선에 갈 동점자(tied)로 나눔
+function topWithTie(tally, K) {
+  const groups = {}; for (const id in tally) if (tally[id] > 0) (groups[tally[id]] = groups[tally[id]] || []).push(id);
+  const fixed = []; let tied = [];
+  for (const c of Object.keys(groups).map(Number).sort((a, b) => b - a)) {
+    const g = groups[c].sort((a, b) => num(a) - num(b));
+    if (fixed.length + g.length <= K) fixed.push(...g); else { tied = g; break; }
+    if (fixed.length === K) break;
+  }
+  return { fixed, tied, slots: K - fixed.length };
+}
+function botRunoffUpdates(d, tied) {
+  const up = {};
+  for (const b of aliveIds().filter(id => P(id).bot)) {
+    const pool = tied.filter(x => x !== b && !(d > 1 && roleOf(b) === 'mafia' && roleOf(x) === 'mafia'));
+    up[`act/d${d}/${b}/rv`] = pool.length && Math.random() > 0.05 ? pick(pool) : 'skip'; up[`act/d${d}/${b}/rvd`] = true;
+  }
+  return up;
+}
+// 결선: 동점자 중 남은 자리만큼. 결선에서도 경계 동점이면 그 동점자들은 후보에서 빠짐
+function resolveRunoffUpdates(d) {
+  const nom = S.pub.nom; const tied = arr(nom.tied); const A = actDay(d); const alive = aliveIds();
+  const tally = {}; tied.forEach(id => (tally[id] = 0));
+  for (const p of alive) { const v = A[p] && A[p].rv; if (v && v !== p && v in tally) tally[v]++; }
+  const r = topWithTie(tally, nom.slots);
+  const cands = [...arr(nom.cands), ...r.fixed];
+  const runs = [...arr(nom.runs), { tally: tied.map(id => ({ id, c: tally[id] })).sort((a, b) => b.c - a.c) }];
+  const up = { 'pub/nom/cands': cands, 'pub/nom/runs': runs };
+  // 또 동점이면 남은 자리를 두고 그 동점자끼리 다시 결선 (표를 하나도 못 받은 경우만 끝)
+  if (r.tied.length) {
+    Object.assign(up, { 'pub/nom/tied': r.tied, 'pub/nom/slots': r.slots, 'pub/nom/round': (nom.round || 1) + 1 });
+    for (const p of alive) { up[`act/d${d}/${p}/rv`] = null; up[`act/d${d}/${p}/rvd`] = null; }
+  }
+  return { up, cands, again: r.tied.length ? r.tied : null };
+}
+function toDefense(d, cands, up) {
+  Object.assign(up, botJudgeUpdates(d, cands));
+  if (cands.length) Object.assign(up, phaseUp('defense', d));
+  else Object.assign(up, phaseUp('verdict', d), { 'pub/verdict': { d, res: [], need: 0 } });
+  return up;
+}
+function resolveJudgeUpdates(d) {
+  const h = HS(), up = {}, logs = {};
+  const A = actDay(d); const alive = aliveIds(); const cands = candsNow().filter(isAlive);
+  const res = []; const exec = [];
+  for (const c of cands) {
+    const voters = alive.filter(v => v !== c); let k = 0;
+    for (const v of voters) if (A[v] && A[v].j && A[v].j[c] === 'k') k++;
+    const need = needKill(voters.length); const ex = k >= need;
+    res.push({ id: c, k, s: voters.length - k, need, ex });
+    if (ex) exec.push(c); else h.escapes[c] = (h.escapes[c] || 0) + 1;
+  }
+  for (const e of exec) {
+    up[`players/${e}/alive`] = false; up[`players/${e}/death`] = { d, by: 'vote' };
+    if (roleOf(e) === 'mafia') { up[`secret/${e}/side`] = 'm'; addLog(logs, e, d, 'v', '⚖️ 처형됐어요. 마피아 편 유령이 되어 영혼 투시(게임 중 단 한 번)로 동료를 도울 수 있어요.'); }
+    else addLog(logs, e, d, 'v', '⚖️ 처형됐어요. 이제 유령이에요. 시민 편과 마피아 편 중 어느 편에 설지 골라 주세요.');
+  }
+  for (const c of cands.filter(x => !exec.includes(x))) addLog(logs, c, d, 'v', '😮‍💨 최종 판정에서 살아남았어요!');
+  const aliveAfter = alive.filter(id => !exec.includes(id));
+  const win = winCheck(aliveAfter); h.pendingWin = win || null;
+  up['pub/verdict'] = { d, res, need: res.length ? res[0].need : 0 };
+  for (const id in logs) up[`secret/${id}/log`] = logs[id];
+  up.hs = h;
+  return up;
+}
+
+/* ---- 밤 ---- */
+function resolveNightUpdates(d) {
+  const h = HS(), up = {}, logs = {};
+  const A = actDay(d); const alive = aliveIds(); const aliveSet = new Set(alive);
+  const R = roleOf; const L = (id, tx) => addLog(logs, id, d, 'n', tx);
+  const choice = id => A[id] && A[id].n;
+
+  // 둘째 밤부터: 살아 있는 마피아가 각자 1명씩 암살 (같은 사람을 고르면 한 명만). 첫날 밤은 암살 없음
+  const killers = alive.filter(id => R(id) === 'mafia');
+  const targets = d === 1 ? [] : [...new Set(killers.map(choice).filter(t => t && aliveSet.has(t)))].sort((a, b) => num(a) - num(b));
+
+  const prot = new Set();
+  if (d > 1) for (const doc of alive.filter(id => R(id) === 'doctor')) {
+    const t = choice(doc);
+    if (t && aliveSet.has(t) && t !== h.lastProtect[doc]) { prot.add(t); h.lastProtect[doc] = t; up[`secret/${doc}/lastProtect`] = t; L(doc, `💉 ${t === doc ? '나 자신을' : who(t) + '님을'} 지켰어요.`); }
+    else { delete h.lastProtect[doc]; up[`secret/${doc}/lastProtect`] = null; }
+  }
+
+  const killedList = [];
+  if (targets.length) for (const k of killers) L(k, `🔪 오늘 밤 마피아의 목표: ${targets.map(who).join(', ')}`);
+  for (const target of targets) {
+    if (prot.has(target)) {
+      for (const doc of alive.filter(id => R(id) === 'doctor' && choice(id) === target)) { L(doc, `✨ 마피아가 ${who(target)}님을 노렸지만 당신이 막아냈어요!`); h.saves[doc] = (h.saves[doc] || 0) + 1; }
+      for (const k of killers) L(k, `🛡️ 누군가 ${who(target)}님을 지켜서 암살에 실패했어요.`);
+    } else {
+      killedList.push(target); up[`players/${target}/alive`] = false; up[`players/${target}/death`] = { d, by: 'night' };
+      if (R(target) === 'mafia') {
+        up[`secret/${target}/side`] = 'm';
+        L(target, '🌙 동료 마피아에게 암살당했어요! 그래도 당신은 마피아 편 유령이에요. 영혼 투시(게임 중 단 한 번)로 동료를 도와주세요. 마피아가 이기면 당신도 승리해요.');
+        for (const k of killers.filter(x => x !== target)) L(k, `🩸 마피아 동료 ${who(target)}님을 희생시켰어요.`);
+      } else {
+        up[`secret/${target}/side`] = 'c';
+        L(target, '🌙 마피아에게 암살당했어요. 이제 시민 편 유령이에요. 영혼 투시(게임 중 단 한 번)로 마피아를 찾아 마을을 도와주세요. 마피아가 모두 처형되면 당신도 승리해요.');
+      }
+    }
+  }
+  if (d === 1) for (const k of killers) L(k, '🌙 첫날 밤은 동료를 확인하는 밤이라 암살이 없어요.');
+  else if (!targets.length && killers.length) for (const k of killers) L(k, '🔪 오늘 밤은 아무도 암살하지 않았어요.');
+  const killed = killedList[0] || null;
+
+  // 경찰 팀: 각자 조사하고, 결과는 그날 밤 살아 있던 경찰 전원에게 공유 (누가 조사했는지는 비밀)
+  const pk = ST().pk; const police = alive.filter(id => R(id) === 'police');
+  const found = {};
+  for (const p of police) {
+    const ts = [...new Set(arr(A[p] && A[p].ns))].filter(t => aliveSet.has(t) && t !== p).slice(0, pk);
+    for (const t of ts) (found[t] = found[t] || []).push(p);
+  }
+  const teamChecked = new Set(arr(h.checked.team)); Object.keys(found).forEach(t => teamChecked.add(t)); h.checked.team = [...teamChecked];
+  for (const t of Object.keys(found)) if (R(t) === 'mafia') for (const p of found[t]) h.finds[p] = (h.finds[p] || 0) + 1;
+  for (const p of police) {
+    up[`secret/${p}/checked`] = h.checked.team;
+    const ts = Object.keys(found).sort((a, b) => num(a) - num(b));
+    if (!ts.length) { if (police.length > 1) L(p, '🚓 오늘 밤은 경찰 누구도 조사하지 않았어요.'); continue; }
+    for (const t of ts) {
+      const mine = found[t].includes(p); const tag = police.length > 1 ? (mine ? ' (내 조사)' : ' (다른 경찰의 조사)') : '';
+      L(p, (R(t) === 'mafia' ? `🚨 ${who(t)}님은 마피아입니다!` : `🚓 ${who(t)}님은 마피아가 아닙니다.`) + tag);
+    }
+  }
+
+  const sv = {};
+  for (const p of alive) {
+    const t = A[p] && A[p].s; if (!t || t === p || !aliveSet.has(t)) continue;
+    sv[t] = (sv[t] || 0) + 1; if (R(t) === 'mafia' && R(p) !== 'mafia') h.susHits[p] = (h.susHits[p] || 0) + 1;
+  }
+  const suspects = Object.keys(sv).filter(id => !killedList.includes(id)).sort((a, b) => sv[b] - sv[a] || num(a) - num(b)).slice(0, 3).map(id => ({ id, c: sv[id] }));
+
+  const aliveAfter = alive.filter(id => !killedList.includes(id));
+  const mafiaLeft = aliveAfter.filter(id => R(id) === 'mafia').length;
+  const win = winCheck(aliveAfter); h.pendingWin = win || null;
+  const line = d === 1 ? '🌙 첫날 밤, 마피아들이 서로를 확인했어요. 오늘 밤부터 학살이 시작됩니다…'
+    : killedList.length ? `🌙 지난밤 ${killedList.map(who).join(', ')}님이 마피아에게 암살당했습니다.` : '🌙 지난밤에는 아무도 죽지 않았습니다.';
+  up['pub/morning'] = { day: d + 1, line, killed: killedList.length ? killedList : null, suspects, alive: aliveAfter.length, mafia: mafiaLeft };
+  up['pub/status'] = { day: d + 1, alive: aliveAfter.length, mafia: mafiaLeft };
+  for (const id in logs) up[`secret/${id}/log`] = logs[id];
+  up.hs = h;
+  return { up, win, line };
+}
+
+function endUpdates(win) {
+  const h = HS(); const roles = {}, sides = {};
+  sortedIds().forEach(id => { roles[id] = roleOf(id); sides[id] = sideOf(id) || 'citizen'; });
+  const best = o => { const v = Object.values(o).filter(x => typeof x === 'number'); const mx = Math.max(0, ...v); return mx >= 1 ? Object.keys(o).filter(id => o[id] === mx).slice(0, 3) : []; };
+  const aw = []; let x;
+  if ((x = best(h.susHits)).length) aw.push({ e: '🔎', t: '명탐정', ids: x, n: `밤마다 마피아를 ${h.susHits[x[0]]}번 지목` });
+  if ((x = best(h.finds)).length) aw.push({ e: '🚓', t: '날카로운 경찰', ids: x, n: `마피아를 ${h.finds[x[0]]}명 찾아냄` });
+  if ((x = best(h.saves)).length) aw.push({ e: '💉', t: '생명의 은인', ids: x, n: `${h.saves[x[0]]}명을 살림` });
+  if ((x = best(h.escapes)).length) aw.push({ e: '🎤', t: '명변론가', ids: x, n: `최종 판정에서 ${h.escapes[x[0]]}번 살아남음` });
+  if ((x = best(h.gFinds)).length) aw.push({ e: '👁', t: '꿰뚫어 본 유령', ids: x, n: `${SKILL}로 마피아를 ${h.gFinds[x[0]]}번 찾음` });
+  return { 'meta/phase': 'end', 'meta/startedAt': null, 'pub/end': { w: win.w, why: win.why, roles, sides, aw } };
+}
+function resetUpdates() {
+  const up = { 'meta/phase': 'lobby', 'meta/day': 0, 'meta/startedAt': null, act: null, pub: null, hs: null, secret: null, choice: null };
+  for (const id of Object.keys(S.players || {})) { up[`players/${id}/alive`] = null; up[`players/${id}/death`] = null; }
+  return up;
+}
+
+async function advance() {
+  if (App.busy || !App.active || !S.meta) return;
+  App.busy = true;
+  try {
+    const m = S.meta, d = m.day || 0; let up;
+    switch (m.phase) {
+      case 'lobby': up = startGameUpdates(); break;
+      case 'role': up = phaseUp('talk', 1); break;
+      case 'talk': up = phaseUp('court', d); break;
+      case 'court': up = Object.assign(botNominateUpdates(d), phaseUp('nominate', d)); break;
+      case 'nominate': {
+        const r = resolveNominateUpdates(d);
+        up = r.tied.length ? Object.assign(r.up, botRunoffUpdates(d, r.tied), phaseUp('runoff', d)) : toDefense(d, r.cands, r.up);
+        break;
+      }
+      case 'runoff': {
+        const r = resolveRunoffUpdates(d);
+        if (r.again) { up = Object.assign(r.up, phaseUp('runoff', d)); const bu = botRunoffUpdates(d, r.again); for (const k in bu) up[k] = bu[k]; }
+        else up = toDefense(d, r.cands, r.up);
+        break;
+      }
+      case 'defense': up = phaseUp('judge', d); break;
+      case 'judge': up = Object.assign(resolveJudgeUpdates(d), phaseUp('verdict', d)); break;
+      case 'verdict': {
+        const pw = S.hs && S.hs.pendingWin;
+        up = pw ? endUpdates(pw) : Object.assign(botNightUpdates(d), d === 1 ? mafiaMeetUpdates() : {}, phaseUp('night', d));
+        break;
+      }
+      case 'night': {
+        const r = resolveNightUpdates(d);
+        up = r.win ? Object.assign(r.up, endUpdates(Object.assign({}, r.win, { why: r.line + ' ' + r.win.why }))) : Object.assign(r.up, phaseUp('morning', d + 1));
+        if (r.win) up.hs.pendingWin = null;
+        break;
+      }
+      case 'morning': up = phaseUp('talk', d); break;
+      default: return;
+    }
+    await DB.update(roomPath(), up);
+  } catch (e) { console.error(e); alert('진행 중 문제가 생겼어요: ' + e.message); }
+  finally { App.busy = false; }
+}
+function allIn() {
+  const m = S.meta; const A = actDay(m.day);
+  if (m.phase === 'role') return sortedIds().every(id => actDay(0)[id] && actDay(0)[id].ok);
+  if (m.phase === 'nominate') return aliveIds().every(id => A[id] && A[id].nvd);
+  if (m.phase === 'runoff') return aliveIds().every(id => A[id] && A[id].rvd);
+  if (m.phase === 'judge') return aliveIds().every(id => A[id] && A[id].jd);
+  if (m.phase === 'night') return sortedIds().every(id => A[id] && A[id].nd);
+  return false;
+}
+function hostTick() {} // 자동 진행 없음: 사회자가 '다음 단계'를 눌러 넘김
+// 다음 단계 버튼에 쓸 이름
+function nextLabel() {
+  const m = S.meta; if (!m) return '다음 단계';
+  const ph = m.phase;
+  if (ph === 'lobby') return '게임 시작';
+  if (ph === 'defense') return '최종 판정으로';
+  if (ph === 'nominate') return '후보 확정';
+  if (ph === 'verdict') return S.hs && S.hs.pendingWin ? '결과 보기' : '밤으로';
+  if (ph === 'night') return '아침으로';
+  const nx = { role: '밀담 시작', talk: '광장 토론으로', court: '후보 지명 투표로', runoff: '후보 확정', judge: '판결 공개', morning: '밀담 시작' }[ph];
+  return nx || '다음 단계';
+}
+function goNext() { return advance(); }
+// 유령의 편 고르기·영혼 투시 결과를 진행 기기가 처리
+function hostSideEffects() {
+  const m = S.meta; if (!m || m.phase === 'lobby' || m.phase === 'end') return null;
+  const up = {}; const ch = S.choice || {}; const mafiaAll = sortedIds().filter(id => roleOf(id) === 'mafia');
+  const whoList = mafiaAll.map(who).join(', ');
+  for (const id of deadIds()) {
+    const sc = sec(id); if (sc.side) continue;
+    if (roleOf(id) === 'mafia') { up[`secret/${id}/side`] = 'm'; continue; }
+    if (P(id).death && P(id).death.by === 'night') { up[`secret/${id}/side`] = 'c'; continue; }
+    let c = ch[id];
+    if (!c && P(id).bot) c = Math.random() < 0.5 ? 'm' : 'c';
+    if (c !== 'm' && c !== 'c') continue;
+    up[`secret/${id}/side`] = c;
+    const log = arr(sc.log).slice();
+    if (c === 'm') { up[`secret/${id}/mates`] = mafiaAll; log.push({ d: m.day, ph: 'g', tx: `🔪 마피아 편 유령이 되었어요. 마피아는 ${whoList}예요. 마피아가 이기면 당신도 승리해요.` }); }
+    else log.push({ d: m.day, ph: 'g', tx: '🙂 시민 편 유령이 되었어요. 마피아가 모두 처형되면 당신도 승리해요.' });
+    up[`secret/${id}/log`] = log;
+  }
+  if (m.phase === 'night') {
+    const d = m.day; const A = actDay(d); const h = HS(); let hc = false;
+    const police = aliveIds().filter(id => roleOf(id) === 'police');
+    if (police.length > 1) for (const p of police) {
+      const others = [...new Set(police.filter(q => q !== p).flatMap(q => arr(A[q] && A[q].ns)))].sort();
+      const cur = sec(p).tpk && sec(p).tpk.d === d ? arr(sec(p).tpk.ids).slice().sort() : null;
+      if (others.length ? (!cur || cur.join() !== others.join()) : (cur && cur.length)) up[`secret/${p}/tpk`] = { d, ids: others.length ? others : null };
+    }
+    for (const id of deadIds()) {
+      const t = A[id] && A[id].look; if (!t || !S.players[t]) continue;
+      const looks = arr(sec(id).looks); if (looks.length) continue; // 영혼 투시는 게임 중 단 한 번
+      up[`secret/${id}/looks`] = [...looks, { d, t, r: roleOf(t) }];
+      if (roleOf(t) === 'mafia' && sideOf(id) === 'citizen') { h.gFinds[id] = (h.gFinds[id] || 0) + 1; hc = true; }
+    }
+    if (hc) up['hs/gFinds'] = h.gFinds;
+  }
+  return Object.keys(up).length ? up : null;
+}
+function hostOnData() {
+  const m = S.meta; if (!m) return;
+  App.active = m.hostId === App.hostId;
+  if (!App.active) return;
+  if (m.phase === 'lobby') {
+    const ids = Object.keys(S.players || {});
+    const need = ids.filter(id => !S.players[id].num).sort((a, b) => (S.players[a].joined || 0) - (S.players[b].joined || 0));
+    if (need.length) {
+      let mx = Math.max(0, ...ids.map(id => S.players[id].num || 0)); const up = {};
+      need.forEach(id => (up[`players/${id}/num`] = ++mx));
+      DB.update(roomPath(), up);
+    }
+  }
+  const se = hostSideEffects(); if (se) DB.update(roomPath(), se);
+  const key = m.phase + (m.day || 0);
+  if (key !== App.hostKey) { if (App.hostKey && !App.demo) chime(PH[m.phase] && PH[m.phase].sky); App.hostKey = key; }
+}
+
+let AC = null;
+function chime(kind) {
+  if (!App.sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind === 'night' ? [392, 294, 262] : kind === 'day' ? [523, 659, 784] : [494, 587];
+    notes.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = f;
+      const t = AC.currentTime + i * 0.17;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.connect(g).connect(AC.destination); o.start(t); o.stop(t + 0.6);
+    });
+  } catch (e) {}
+}
+
+/* =====================================================================
+   입장 화면
+   ===================================================================== */
+function renderEntry(o = {}) {
+  App.mode = null; setSky('night');
+  const room = o.room || '';
+  let host = null; try { host = JSON.parse(store.getItem('mafia_host') || 'null'); } catch (e) {}
+  $('#app').innerHTML = `
+  <div class="E">
+    <div class="E-hero"><h1 class="E-title">마피아 마을</h1>
+      <p>휴대폰으로 직업을 받고, 교실을 돌아다니며 숨어 있는 마피아를 찾아내세요.</p></div>
+    <section class="E-card">
+      <label>방 번호<input id="inCode" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(room)}" placeholder="선생님 화면의 4자리"></label>
+      <label>이름<input id="inName" maxlength="8" autocomplete="off" placeholder="예: 김민수"></label>
+      <button class="btn big" data-a="join">입장하기</button>
+      <p class="err" id="err">${esc(o.msg || '')}</p>
+      <details><summary>이미 들어왔었는데 화면이 꺼졌나요?</summary>
+        <div class="E-sub"><label>재입장 코드 (선생님께 물어보세요)<input id="inRe" inputmode="numeric" maxlength="3" autocomplete="off"></label>
+        <button class="btn ghosty" data-a="rejoin">다시 들어가기</button></div></details>
+    </section>
+    <section class="E-teacher">
+      ${host ? `<button class="btn resume" data-a="resume">${esc(host.code)}번 방 계속 진행하기 (선생님)</button>` : ''}
+      <details><summary>선생님용</summary>
+        <div class="E-card" style="margin-top:10px">
+          <label>비밀번호<input id="inPw" type="password" inputmode="numeric" autocomplete="off"></label>
+          <button class="btn" data-a="create">새 방 만들기</button>
+          <label>진행 중인 방 번호<input id="inOld" inputmode="numeric" maxlength="4" autocomplete="off"></label>
+          <button class="btn ghosty" data-a="open">이 기기에서 이어서 진행하기</button>
+        </div></details>
+    </section>
+    ${DB.mode === 'local' ? '<p class="note">⚠️ Firebase 설정값(FIREBASE_CONFIG)이 비어 있어요. 지금은 이 브라우저의 여러 탭끼리만 연결되는 테스트 상태예요. 수업에 쓰려면 파일 위쪽에 설정값을 넣어 주세요.</p>' : ''}
+  </div>`;
+}
+const setErr = t => { const e = $('#err'); if (e) e.textContent = t; };
+
+async function studentJoin() {
+  const code = $('#inCode').value.trim(), name = $('#inName').value.trim().replace(/\s+/g, ' ');
+  if (!/^\d{4}$/.test(code)) return setErr('방 번호 4자리를 입력하세요.');
+  if (!name) return setErr('이름을 입력하세요.');
+  const meta = await DB.get(`rooms/${code}/meta`);
+  if (!meta) return setErr('그런 방이 없어요. 번호를 다시 확인하세요.');
+  const players = (await DB.get(`rooms/${code}/players`)) || {};
+  const saved = store.getItem('mafia_pid_' + code);
+  if (saved && players[saved]) return enterStudent(code, saved);
+  if (meta.phase !== 'lobby') return setErr('이미 게임이 시작됐어요. 다시 들어오려면 아래 재입장 코드를 쓰세요.');
+  if (Object.keys(players).length >= MAX_PLAYERS) return setErr(`방이 꽉 찼어요 (최대 ${MAX_PLAYERS}명).`);
+  if (Object.values(players).some(p => p.name === name)) return setErr('같은 이름이 이미 있어요. 이름 뒤에 반이나 번호를 붙여 주세요.');
+  const pid = 'p' + rid(8);
+  await DB.set(`rooms/${code}/players/${pid}`, { name, joined: DB.now(), rejoin: String(100 + Math.floor(Math.random() * 900)) });
+  store.setItem('mafia_pid_' + code, pid);
+  enterStudent(code, pid);
+}
+async function studentRejoin() {
+  const code = $('#inCode').value.trim(), name = $('#inName').value.trim(), rc = $('#inRe').value.trim();
+  if (!/^\d{4}$/.test(code) || !name || !rc) return setErr('방 번호, 이름, 재입장 코드를 모두 입력하세요.');
+  const players = (await DB.get(`rooms/${code}/players`)) || {};
+  const pid = Object.keys(players).find(id => players[id].name === name && String(players[id].rejoin) === rc);
+  if (!pid) return setErr('이름이나 재입장 코드가 맞지 않아요.');
+  store.setItem('mafia_pid_' + code, pid);
+  enterStudent(code, pid);
+}
+async function newRoomCode() {
+  let code = '';
+  for (let i = 0; i < 30; i++) { code = String(1000 + Math.floor(Math.random() * 9000)); if (!(await DB.get(`rooms/${code}/meta`))) break; }
+  return code;
+}
+async function teacherCreate() {
+  if ($('#inPw').value !== TEACHER_PW) return alert('비밀번호가 맞지 않아요.');
+  await cleanupOldRooms();
+  const code = await newRoomCode(); const hostId = rid(10);
+  await DB.set(`rooms/${code}`, { meta: { phase: 'lobby', day: 0, created: DB.now(), hostId, settings: defaultSettings() } });
+  store.setItem('mafia_host', JSON.stringify({ code, hostId }));
+  enterTeacher(code, hostId);
+}
+async function teacherOpen() {
+  if ($('#inPw').value !== TEACHER_PW) return alert('비밀번호가 맞지 않아요.');
+  const code = $('#inOld').value.trim();
+  if (!(await DB.get(`rooms/${code}/meta`))) return alert('그런 방이 없어요.');
+  const hostId = rid(10);
+  await DB.update(`rooms/${code}/meta`, { hostId });
+  store.setItem('mafia_host', JSON.stringify({ code, hostId }));
+  enterTeacher(code, hostId);
+}
+async function teacherResume() {
+  let host = null; try { host = JSON.parse(store.getItem('mafia_host') || 'null'); } catch (e) {}
+  if (!host) return;
+  if (!(await DB.get(`rooms/${host.code}/meta`))) { store.removeItem('mafia_host'); return renderEntry({ msg: '그 방은 이미 없어졌어요.' }); }
+  enterTeacher(host.code, host.hostId);
+}
+// 선생님 화면이 꺼지지 않도록 (지원하는 브라우저에서만)
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && App.mode === 'teacher') keepAwake(); });
+// 연결이 끊기면 화면 위에 알림
+let connReady = false;
+DB.onConn(ok => {
+  const el = $('#net'); if (!el) return;
+  if (ok) connReady = true;
+  el.className = !ok && connReady ? 'show' : '';
+});
+// 하루가 지난 방은 새 방을 만들 때 정리
+async function cleanupOldRooms() {
+  try {
+    const rooms = (await DB.get('rooms')) || {}; const now = DB.now();
+    for (const code in rooms) { const c = rooms[code] && rooms[code].meta && rooms[code].meta.created; if (!c || now - c > 24 * 3600 * 1000) await DB.remove('rooms/' + code); }
+  } catch (e) {}
+}
+function leaveRoom() {
+  App.unsub.forEach(f => f()); App.unsub = []; App.timers.forEach(clearInterval); App.timers = []; S = {};
+  App.demo = false; const db = $('#demobar'); if (db) db.innerHTML = ''; const ov = $('#overlay'); if (ov) ov.innerHTML = '';
+}
+
+/* =====================================================================
+   혼자 체험 모드 — 봇 + 나, 이 기기가 진행까지 맡음
+   ===================================================================== */
+async function startDemo() {
+  App.demoRole = ($('#inRole') && $('#inRole').value) || 'random';
+  const n = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, +(($('#inN') && $('#inN').value) || 24)));
+  const code = await newRoomCode(); const hostId = rid(10); const pid = 'p' + rid(8); let t = DB.now();
+  const players = { [pid]: { name: '나', joined: t++, rejoin: '000', num: 1 } };
+  BOT_NAMES.slice(0, n - 1).forEach((nmx, i) => { players['b' + rid(8)] = { name: '봇 ' + nmx, bot: true, joined: t++, rejoin: '000', num: i + 2 }; });
+  await DB.set(`rooms/${code}`, { meta: { phase: 'lobby', day: 0, created: DB.now(), hostId, settings: defaultSettings() }, players });
+  enterDemo(code, hostId, pid);
+}
+function enterDemo(code, hostId, pid) {
+  leaveRoom();
+  Object.assign(App, { mode: 'student', demo: true, view: 'phone', code, hostId, pid, lastKey: '', hostKey: '', drawer: false, slides: false, admin: false, lookSel: null, sideSel: null });
+  App.unsub.push(DB.on(roomPath(), v => { S = v || {}; S._ready = { meta: true, players: true }; hostOnData(); renderDemo(); }));
+  App.timers.push(setInterval(hostTick, 400), setInterval(tickTimers, 250));
+}
+function renderDemo() {
+  if (!S.meta || !App.demo) return;
+  App.mode = App.view === 'tv' ? 'teacher' : 'student';
+  if (App.mode === 'teacher') renderTeacher(); else renderStudent();
+  const m = S.meta; const alive = S.players && S.players[App.pid] && isAlive(App.pid);
+  const ph = PH[m.phase] || {}; const live = !['lobby', 'end', 'role'].includes(m.phase);
+  $('#demobar').innerHTML = `<span class="db-ph">체험 · ${m.phase === 'lobby' || m.phase === 'end' ? '' : m.day + '일차 '}${ph.name || ''}</span>
+    <button class="${App.view === 'phone' ? 'on' : ''}" data-a="dview" data-v="phone">📱 내 휴대폰</button>
+    <button class="${App.view === 'tv' ? 'on' : ''}" data-a="dview" data-v="tv">📺 선생님 화면</button>
+    ${m.phase === 'end' ? '' : `<button data-a="dnext">▶ ${nextLabel()}</button>`}
+    ${alive && live ? '<button data-a="dghost">👻 죽어 보기</button>' : ''}
+    <button data-a="dquit">나가기</button>`;
+}
+
+/* =====================================================================
+   선생님 화면
+   ===================================================================== */
+function enterTeacher(code, hostId) {
+  leaveRoom();
+  Object.assign(App, { mode: 'teacher', demo: false, code, hostId, lastKey: '', hostKey: '' });
+  keepAwake();
+  App.unsub.push(DB.on(roomPath(), v => { S = v || {}; hostOnData(); renderTeacher(); }));
+  App.timers.push(setInterval(hostTick, 400), setInterval(tickTimers, 250));
+}
+function joinURL() { return location.origin + location.pathname + '?room=' + App.code; }
+
+function tok(id, o = {}) {
+  const p = P(id); const dead = p.alive === false; const r = roleOf(id); const ph = S.meta.phase;
+  const showRole = r && ph === 'end';
+  const ok = o.check && o.check(id);
+  const cand = !dead && ['runoff', 'defense', 'judge', 'verdict'].includes(ph) && candsNow().includes(id);
+  const tie = !dead && ph === 'runoff' && nomNow() && arr(nomNow().tied).includes(id);
+  const sp = speaker(); const now = sp && sp.id === id;
+  const sleeping = dead && COURT.includes(ph);
+  const sd = showRole ? (S.pub.end.sides || {})[id] : null;
+  return `<div class="tok ${dead ? 'dead' : ''} ${cand ? 'cand' : ''} ${now ? 'now' : ''} ${showRole ? 't-' + (sd || ROLES[r].team) : ''}" ${o.lobby ? `data-a="kick" data-id="${id}" title="눌러서 내보내기"` : ''}>
+    <b>${dead ? (sleeping ? '💤' : '👻') : (p.num || '·')}</b><span>${esc(p.name)}</span>
+    ${dead ? `<i class="tk-sub">${p.num}번 ${p.death && p.death.by === 'vote' ? '⚖️' : '🌙'}</i>` : ''}
+    ${showRole ? `<i class="tk-role">${ROLES[r].emoji}</i>` : ''}
+    ${cand ? '<i class="tk-cand">후보</i>' : tie ? '<i class="tk-cand tie">결선</i>' : ''}
+    ${ok ? '<i class="tk-ok">✓</i>' : ''}</div>`;
+}
+function settingsPanel() {
+  const st = ST(); const n = Object.keys(S.players || {}).length; const comp = st.comp || defaultComp(n);
+  const cit = n - (comp.mafia || 0) - (comp.police || 0) - (comp.doctor || 0);
+  const row = (label, a, show, extra = '') => `<div class="set-row"><span>${label}</span><button data-a="${a}" data-v="-1" ${extra}>−</button><b>${show}</b><button data-a="${a}" data-v="1" ${extra}>+</button></div>`;
+  const warn = n < MIN_PLAYERS ? `<span class="warn">${MIN_PLAYERS}명 이상이어야 시작할 수 있어요</span>` : n > MAX_PLAYERS ? `<span class="warn">최대 ${MAX_PLAYERS}명이에요</span>` : cit < 1 ? '<span class="warn">직업이 너무 많아요</span>' : '';
+  return `<details class="set" ${App.setOpen ? 'open' : ''}>
+    <summary data-a="setopen">⚙️ 게임 설정 (마피아 ${comp.mafia} · 경찰 ${comp.police} · 의사 ${comp.doctor} · 시민 ${Math.max(0, cit)}) ${warn}</summary>
+    <div class="set-grid">
+      <h4>직업 구성 ${st.comp ? '<button data-a="compreset" style="text-decoration:underline">인원에 맞춘 추천 구성으로</button>' : '(인원에 맞춰 자동 추천)'}</h4>
+      ${['mafia', 'police', 'doctor'].map(r => row(`${ROLES[r].emoji} ${ROLES[r].name}`, 'comp', comp[r] || 0, `data-r="${r}"`)).join('')}
+      <div class="set-row"><span>🙂 시민</span><b class="${cit < 1 ? 'warn' : ''}">${cit}</b></div>
+      <h4>규칙</h4>
+      ${row('🚓 경찰 1명이 밤마다 조사할 인원', 'pk', st.pk + '명')}
+      <p class="set-note">시간 제한은 없어요. 단계마다 화면 아래의 <b>▶ 다음</b> 버튼(또는 키보드 →, 발표용 리모컨)으로 넘겨요. 투표나 밤에 제출하지 않은 사람은 기권으로 처리돼요.</p>
+    </div></details>`;
+}
+function renderTeacher() {
+  const m = S.meta;
+  if (!m) { $('#app').innerHTML = '<div class="E"><p>방을 불러오는 중이에요…</p></div>'; return; }
+  setSky(PH[m.phase] ? PH[m.phase].sky : 'night');
+  $('#app').innerHTML = m.phase === 'lobby' ? lobbyHTML() : gameHTML();
+  if (m.phase === 'lobby' && window.QRCode && $('#qr')) {
+    try { new QRCode($('#qr'), { text: joinURL(), width: 220, height: 220, colorDark: '#1C2142', colorLight: '#ffffff' }); } catch (e) {}
+  }
+  renderOverlay(); tickTimers();
+}
+function lobbyHTML() {
+  const ids = sortedIds(); const n = ids.length;
+  return `<div class="T T-lobby">
+    <header class="T-head"><div><h1 class="T-title">마피아 마을</h1>
+      <p class="T-sub">휴대폰 카메라로 QR을 찍고, 방 번호와 이름을 입력하세요.</p></div>
+      <div class="T-count"><b>${n}</b>명 입장 <small class="muted">(${MIN_PLAYERS}~${MAX_PLAYERS}명)</small></div></header>
+    <div class="T-main">
+      <section class="T-stage">
+        <div class="join">${window.QRCode ? '<div id="qr" class="qr"></div>' : ''}
+          <div><div class="join-lbl">방 번호</div><div class="join-code">${esc(App.code)}</div><div class="join-url">${esc(joinURL())}</div></div></div>
+        ${settingsPanel()}
+      </section>
+      <section class="T-village ${n > 24 ? 'many' : ''}">${ids.map(id => tok(id, { lobby: !App.demo })).join('') || '<p class="empty">아직 아무도 없어요. QR을 찍어 들어와 주세요.</p>'}</section>
+    </div>
+    <footer class="T-ctrl">
+      <button data-a="slides">📖 규칙 설명</button><span class="sep"></span>
+      ${App.demo || DB.mode !== 'local' ? '' : '<button data-a="bot" data-n="1">테스트 봇 +1</button><button data-a="bot" data-n="fill">24명까지 봇 채우기</button><button data-a="bot" data-n="max">30명까지</button><button data-a="botclear">봇 지우기</button>'}
+      <span class="grow"></span>
+      <button data-a="sound">${App.sound ? '🔔 소리 켬' : '🔕 소리 끔'}</button>
+      <button class="primary" data-a="start" ${n < MIN_PLAYERS || n > MAX_PLAYERS ? 'disabled' : ''}>게임 시작</button>
+    </footer></div>`;
+}
+function newsHTML(mo, compact) {
+  if (!mo) return '';
+  const su = arr(mo.suspects);
+  return `<div class="${compact ? 'clues' : 'mo'}">
+    <p class="${compact ? '' : 'mo-line'} ${mo.killed ? 'kill' : 'safe'}">${esc(mo.line)}</p>
+    <div class="stat2"><div><b>${mo.alive}</b><span>생존</span></div><div class="m"><b>${mo.mafia}</b><span>남은 마피아</span></div></div>
+    ${su.length ? `<p class="sus">🤔 의심 순위 ${su.map(s => `${esc(who(s.id))} <span class="muted">${s.c}</span>`).join(' · ')}</p>` : ''}</div>`;
+}
+function cluesHTML(d) {
+  const mo = S.pub && S.pub.morning;
+  return mo && mo.day === d ? newsHTML(mo, true) : '';
+}
+// 후보와 받은 표 (결선에서 올라온 사람은 결선 표도 함께)
+function candVotes() {
+  const nom = nomNow(); if (!nom) return [];
+  const t = {}; arr(nom.tally).forEach(x => (t[x.id] = x.c));
+  const r = {}; arr(nom.runs).forEach(run => arr(run.tally).forEach(x => (r[x.id] = x.c)));
+  return arr(nom.cands).map(id => ({ id, c: t[id] || 0, r: r[id] }));
+}
+function candListHTML(big) {
+  const cs = candVotes(); if (!cs.length) return '<p class="lead">후보가 없어요</p>';
+  return `<div class="clist ${big ? 'big' : ''}">${cs.map(x => `<div class="citem"><b>${esc(who(x.id))}</b><span>${x.c}표${x.r != null ? ` · 결선 ${x.r}표` : ''}</span></div>`).join('')}</div>`;
+}
+function verdictHTML(v, big) {
+  if (!v) return '';
+  const res = arr(v.res);
+  if (!res.length) return `<div class="vd"><div class="vd-name none">처형 후보 없음</div></div>`;
+  // 다시 그려도 애니메이션이 처음부터 다시 시작하지 않도록, 처음 보여 준 시각부터 흐른 시간만큼 당겨 줌
+  const key = 'v' + v.d; App.vSeen = App.vSeen || {}; if (!App.vSeen[key]) App.vSeen[key] = Date.now();
+  const off = ((Date.now() - App.vSeen[key]) / 1000).toFixed(2);
+  return `<div class="vgrid ${big ? 'big' : ''}" style="--off:${off}s">${res.map((r, i) => {
+    const tot = r.k + r.s || 1;
+    return `<div class="vcard ${r.ex ? 'ex' : 'sv'}" style="--i:${i}">
+      <div class="vc-name">${esc(who(r.id))}</div>
+      <div class="vc-bar"><i class="k" style="--w:${r.k / tot * 100}%"></i><i class="s" style="--w:${r.s / tot * 100}%"></i></div>
+      <div class="vc-n"><span>처형 ${r.k}</span><span>살림 ${r.s}</span></div>
+      <div class="vc-stamp">${r.ex ? '처형' : '생존'}</div></div>`; }).join('')}</div>
+    <p class="muted vd-note">처형 ${v.need}표 이상이면 처형</p>`;
+}
+function endHTML(e) {
+  if (!e) return '';
+  const title = e.w === 'citizen' ? '🙂 시민 편 승리!' : e.w === 'mafia' ? '🔪 마피아 편 승리!' : '게임 중단';
+  return `<div class="end"><div class="end-win">${title}</div><p class="lead" style="font-size:1.2em">${esc(e.why)}</p>
+    <div class="aw">${arr(e.aw).map(a => `<div><span>${a.e}</span><b>${esc(a.t)}</b><em>${arr(a.ids).map(id => esc(who(id))).join(', ')}</em><small>${esc(a.n)}</small></div>`).join('')}</div></div>`;
+}
+function prog(n, of, word) { return `<div class="prog">${n} / ${of}<small>${word}</small></div>`; }
+function stageHTML() {
+  const m = S.meta, d = m.day; const ph = m.phase; const A = actDay(d);
+  const nAlive = aliveIds().length, nAll = sortedIds().length; const st = status();
+  const cnt = k => aliveIds().filter(id => A[id] && A[id][k]).length;
+  if (ph === 'role') return `<p class="lead">직업을 확인하세요</p>${prog(sortedIds().filter(id => actDay(0)[id] && actDay(0)[id].ok).length, nAll, '명 확인')}`;
+  if (ph === 'talk') return `<p class="lead">휴대폰을 넣고 일어나세요</p>${cluesHTML(d)}`;
+  if (ph === 'court') return `<p class="lead">자리로 돌아오세요</p><p class="sub">💤 유령은 엎드려요</p>${cluesHTML(d)}`;
+  if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명</b>이 후보</p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
+  if (ph === 'runoff') { const nom = nomNow();
+    return `<p class="sub">${nom.round > 1 ? `<b>${nom.round}차</b> · ` : ''}동점자 중 <b>${nom.slots}명</b> 선택</p>
+      <div class="chiprow">${arr(nom.tied).map(id => `<span class="cchip tie">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('rvd'), nAlive, '명 제출')}`; }
+  if (ph === 'defense') return candListHTML(true);
+  if (ph === 'judge') return `<p class="sub">처형 <b>${needKill(nAlive - 1)}표</b> 이상이면 처형</p>
+      <div class="chiprow">${candsNow().map(id => `<span class="cchip">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('jd'), nAlive, '명 제출')}`;
+  if (ph === 'verdict') return verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true);
+  if (ph === 'night') return `<p class="lead">고개를 숙이세요</p>${d === 1 ? '<p class="sub">첫날 밤 · 암살 없음</p>' : ''}${prog(sortedIds().filter(id => A[id] && A[id].nd).length, nAll, '명 완료')}`;
+  if (ph === 'morning') return newsHTML(S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null);
+  if (ph === 'end') return endHTML(S.pub && S.pub.end);
+  return '';
+}
+function gameHTML() {
+  const m = S.meta, ph = m.phase, d = m.day; const A = actDay(d);
+  const check = ph === 'role' ? id => actDay(0)[id] && actDay(0)[id].ok
+              : ph === 'nominate' ? id => A[id] && A[id].nvd
+              : ph === 'runoff' ? id => A[id] && A[id].rvd
+              : ph === 'judge' ? id => A[id] && A[id].jd
+              : ph === 'night' ? id => A[id] && A[id].nd : null;
+  const s = status(); const n = sortedIds().length; const ready = check && allIn();
+  return `<div class="T">
+    <header class="T-head"><div>
+      <div class="T-day">${ph === 'end' ? '' : `${d}일차`}${ph !== 'end' ? `<span class="pill-s">생존 ${aliveIds().length}</span><span class="pill-s m">마피아 ${s.mafia}</span>` : ''}</div>
+      <h1 class="T-phase">${PH[ph].icon} ${PH[ph].name}</h1></div>
+      <div class="T-clock"><span class="T-timer js-timer"></span></div></header>
+    <div class="T-main"><section class="T-stage">${stageHTML()}</section>
+      <section class="T-village ${n > 24 ? 'many' : ''}">${sortedIds().map(id => tok(id, { check })).join('')}</section></div>
+    <footer class="T-ctrl ${ph === 'end' ? 'solid' : ''}">
+      <button data-a="slides">📖 규칙</button><button data-a="sound">${App.sound ? '🔔' : '🔕'}</button>
+      <button data-a="admin">👁 명단</button>
+      ${ph === 'end' ? '' : '<button data-a="abort">중단</button>'}
+      <span class="grow"></span>
+      ${ph === 'end' ? '<button class="primary" data-a="reset">새 게임</button>'
+        : `${ready ? '<span class="readyhint ok">✓ 모두 제출</span>' : ''}<button class="primary next ${ready ? 'ready' : ''}" data-a="next">▶ ${nextLabel()}</button>`}
+    </footer></div>`;
+}
+
+const SLIDES = () => {
+  const n = sortedIds().length || 24; const c = compNow();
+  const cit = Math.max(0, n - c.mafia - c.police - c.doctor);
+  return [
+    `<h2>🌙 마피아 마을에 오신 걸 환영합니다</h2><p class="big">이 교실 안에 마피아 ${c.mafia}명이 숨어 있어요.</p>
+     <div class="two"><div><b>🙂 시민 편</b><p>${citWin()}</p></div><div><b>🔪 마피아 편</b><p>${mafWin()}</p></div></div>
+     <p>첫날은 마피아끼리도 서로를 몰라요. <b>첫날 밤</b>에 서로를 확인하고, <b>둘째 밤부터</b> 살아 있는 마피아 수만큼 암살해요!</p>`,
+    `<h2>이번 게임의 직업</h2><div class="rolegrid">
+      <div><b>🔪 마피아 ${c.mafia}명</b>첫날 밤에 서로를 확인. 둘째 밤부터 각자 1명씩 암살</div>
+      <div><b>🚓 경찰 ${c.police}명</b>밤마다 ${ST().pk}명씩 조사${c.police > 1 ? '. 결과는 경찰끼리 공유 (서로 누군지는 몰라요)' : ''}</div>
+      <div><b>💉 의사 ${c.doctor}명</b>둘째 밤부터 밤마다 1명을 암살에서 지킴 (나 자신도 가능)</div>
+      <div><b>🙂 시민 ${cit}명</b>대화와 추리, 밤에는 의심 지목</div></div>`,
+    `<h2>하루는 이렇게 흘러가요</h2><div class="flow">
+      <div><b>📵 밀담</b><small>돌아다니며 대화 (유령도!)</small></div>
+      <div><b>🏛️ 광장 재판</b><small>토론 → 후보 지명 → 최후의 발언 → 최종 판정</small></div>
+      <div><b>🔨 판결</b><small>과반수면 처형</small></div>
+      <div><b>🌙 밤</b><small>모두 휴대폰을 만져요</small></div>
+      <div><b>☀️ 아침</b><small>희생자 · 생존 인원 · 남은 마피아 수</small></div></div>`,
+    `<h2>🏛️ 광장 재판</h2><div class="flow" style="grid-template-columns:repeat(4,1fr)">
+      <div><b>① 토론</b><small>자리에서 지목하고 변론</small></div>
+      <div><b>② 후보 지명</b><small>1명씩 투표, 상위 ‘남은 마피아 수’명이 후보. 경계에서 동점이면 동점자끼리 결선</small></div>
+      <div><b>③ 최후의 발언</b><small>후보가 한 명씩 일어나 변론</small></div>
+      <div><b>④ 최종 판정</b><small>후보마다 처형/살림, 과반수면 처형</small></div></div>
+     <p>처형된 사람의 정체는 공개하지 않아요. 다음 날 아침 ‘남은 마피아 수’로 짐작해야 해요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
+    `<h2>👻 죽어도 끝이 아니에요</h2><div class="two">
+      <div><b>편 정하기</b><p>마피아는 어떻게 죽든 마피아 편, 마피아가 아닌 사람이 암살당하면 시민 편이에요. 마피아는 동료도 암살할 수 있어서, 암살당한 유령이 꼭 시민 편인 건 아니에요. 투표로 처형된 경찰·의사·시민은 편을 직접 골라요.</p></div>
+      <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명의 직업을 들여다봐요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 밀담에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
+     <p>유령은 투표할 수 없고, 광장 재판 동안 엎드려 있어요. 고른 편이 이기면 유령도 함께 승리!</p>`,
+    `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>밀담·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>엎드린 유령이 고개 들기</p></div>
+     <div><b>얼마든지 OK</b><p>거짓말과 연기<br>다른 직업인 척하기<br>동맹 맺기, 배신하기</p></div></div>`
+  ];
+};
+function renderOverlay() {
+  const ov = $('#overlay'); if (!ov) return;
+  if (App.mode !== 'teacher') { ov.innerHTML = ''; return; }
+  if (!App.active && S.meta) {
+    ov.innerHTML = `<div class="ov"><div class="ov-box"><h2>다른 기기에서 이 방을 진행하고 있어요</h2><p class="muted" style="margin:10px 0 18px">이 화면에서 진행하려면 아래 버튼을 누르세요. 다른 기기는 자동으로 멈춰요.</p><button class="btn" data-a="takeover">이 화면에서 진행하기</button></div></div>`;
+    return;
+  }
+  if (App.slides) {
+    const sl = SLIDES(); App.slide = Math.max(0, Math.min(App.slide, sl.length - 1));
+    ov.innerHTML = `<div class="ov"><div class="ov-box"><div class="slide">${sl[App.slide]}</div>
+      <div class="sl-nav"><button data-a="slprev" ${App.slide === 0 ? 'disabled' : ''}>이전</button><span class="muted">${App.slide + 1} / ${sl.length}</span>
+      ${App.slide < sl.length - 1 ? '<button data-a="slnext">다음</button>' : '<button data-a="slides">닫기</button>'}</div></div></div>`;
+    return;
+  }
+  if (App.admin) {
+    const ids = sortedIds();
+    const sdTxt = id => { if (isAlive(id)) return '생존'; const s = sideOf(id); return `👻 ${P(id).death && P(id).death.by === 'vote' ? '처형' : '암살'} · ${s === 'mafia' ? '마피아 편' : s === 'citizen' ? '시민 편' : '편 고르는 중'}`; };
+    ov.innerHTML = `<div class="ov"><div class="ov-box"><div class="dr-top"><h2>관리자 명단 (프로젝터에 비치지 않게 주의!)</h2><button data-a="admin">닫기</button></div>
+      <table class="adm" style="margin-top:12px"><tr><th>번호</th><th>이름</th><th>직업</th><th>상태</th><th>재입장 코드</th></tr>
+      ${ids.map(id => { const r = roleOf(id); return `<tr class="${isAlive(id) ? '' : 'dead'}"><td>${num(id)}</td><td>${esc(nm(id))}</td><td>${r ? ROLES[r].emoji + ' ' + ROLES[r].name : '-'}</td><td>${sdTxt(id)}</td><td>${esc(P(id).rejoin || '')}</td></tr>`; }).join('')}
+      </table></div></div>`;
+    return;
+  }
+  ov.innerHTML = '';
+}
+
+/* =====================================================================
+   학생 화면
+   ===================================================================== */
+function enterStudent(code, pid) {
+  leaveRoom();
+  Object.assign(App, { mode: 'student', demo: false, code, pid, lastKey: '', drawer: false, lookSel: null, sideSel: null });
+  S = {}; S._ready = {};
+  history.replaceState(null, '', location.pathname + '?room=' + code);
+  for (const k of ['meta', 'players', 'pub', 'act']) App.unsub.push(DB.on(roomPath(k), v => { S[k] = v; S._ready[k] = true; renderStudent(); }));
+  App.unsub.push(DB.on(roomPath('secret/' + pid), v => { S.secret = { [pid]: v || {} }; renderStudent(); }));
+  App.unsub.push(DB.on(roomPath('choice/' + pid), v => { S.choice = { [pid]: v }; renderStudent(); }));
+  App.timers.push(setInterval(tickTimers, 250));
+}
+const me = () => P(App.pid);
+const mySec = () => sec(App.pid);
+const myAct = d => actDay(d)[App.pid] || {};
+function chip(id, on, a, extra = '', cls = '') {
+  return `<button class="chip ${on ? 'on' : ''} ${cls}" data-a="${a}" data-id="${id}">${extra}<b>${num(id)}</b><span>${id === App.pid ? '나' : esc(nm(id))}</span></button>`;
+}
+function citWin() { return `마피아 ${compNow().mafia}명을 모두 처형`; }
+function mafWin() { return '마피아 수 ≥ 나머지 생존자 수'; }
+function winText() {
+  const id = App.pid; const sd = sideOf(id);
+  if (!isAlive(id)) return sd === 'mafia' ? '🔪 ' + mafWin() : sd === 'citizen' ? '🙂 ' + citWin() : '편을 고르세요';
+  return teamOf(id) === 'mafia' ? mafWin() : citWin();
+}
+function matesLine(list, label) {
+  const ms = arr(list); if (!ms.length) return '';
+  return `<p class="mates">${label} ${ms.map(x => `${esc(who(x))}${isAlive(x) ? '' : ' 👻'}`).join(', ')}</p>`;
+}
+function mafiaKnownForGhost() {
+  if (roleOf(App.pid) === 'mafia') return [App.pid, ...arr(mySec().mates)];
+  return sideOf(App.pid) === 'mafia' ? arr(mySec().mates) : [];
+}
+function roleCard() {
+  const r = mySec().role; if (!r) return '<div class="rolecard"><div class="rc-cover show"><i>🎴</i>곧 직업이 나와요</div></div>';
+  const R = ROLES[r]; const dead = !isAlive(App.pid); const sd = sideOf(App.pid);
+  let face;
+  if (dead) {
+    face = `<div class="rc-emoji">👻</div><div class="rc-name">${sd === 'mafia' ? '마피아 편 유령' : sd === 'citizen' ? '시민 편 유령' : '유령'}</div>
+      <span class="rc-team ${sd || ''}">원래 ${R.emoji} ${R.name}</span>
+      ${matesLine(mafiaKnownForGhost(), '🔪')}`;
+  } else {
+    face = `<div class="rc-emoji">${R.emoji}</div><div class="rc-name">${R.name}</div>
+      <span class="rc-team ${R.team}">${R.team === 'mafia' ? '마피아 편' : '시민 편'}</span><p class="rc-desc">${roleDesc(r)}</p>
+      ${r === 'mafia' ? (arr(mySec().mates).length ? matesLine(mySec().mates, '🤝') : mySec().met ? '<p class="mates">마피아는 나 혼자</p>' : '') : ''}`;
+  }
+  return `<div class="rolecard hold"><div class="rc-cover"><i>👆</i>꾹 눌러서 보기</div><div class="rc-face">${face}</div></div>`;
+}
+function notebook() {
+  const sc = mySec();
+  const items = arr(sc.log).map(l => ({ d: l.d, tx: l.tx }));
+  arr(sc.looks).forEach(l => items.push({ d: l.d, tx: `👁 ${who(l.t)} = ${ROLES[l.r].emoji} ${ROLES[l.r].name}` }));
+  return items.sort((a, b) => b.d - a.d);
+}
+function logsHTML(list) { return list.map(l => `<p>${l.d ? `<small>${l.d}일</small>` : ''}${esc(l.tx)}</p>`).join(''); }
+function sideChoiceCard() {
+  if (isAlive(App.pid) || sideOf(App.pid) || !mySec().role) return '';
+  if (P(App.pid).death && P(App.pid).death.by === 'night') return '';
+  if (S.choice && S.choice[App.pid]) return '<section class="s-card sidec"><h3>👻 편 정하는 중…</h3></section>';
+  const sel = App.sideSel;
+  return `<section class="s-card sidec"><h3>👻 어느 편에 설까요?</h3>
+    <div class="sides">
+      <button class="sidebtn c ${sel === 'c' ? 'on' : ''}" data-a="sidesel" data-v="c"><b>🙂 시민 편</b></button>
+      <button class="sidebtn m ${sel === 'm' ? 'on' : ''}" data-a="sidesel" data-v="m"><b>🔪 마피아 편</b><span>마피아 명단을 알게 돼요</span></button>
+    </div>
+    <button class="btn big sbtn" data-a="sidego" ${sel ? '' : 'disabled'}>${sel ? '확정 (바꿀 수 없어요)' : '편을 고르세요'}</button></section>`;
+}
+
+function renderStudent() {
+  const R = S._ready || {};
+  if (!R.meta || !R.players) { $('#app').innerHTML = '<div class="E"><p>불러오는 중…</p></div>'; return; }
+  if (!S.meta) { store.removeItem('mafia_pid_' + App.code); leaveRoom(); return renderEntry({ msg: '방이 사라졌어요.' }); }
+  if (!S.players || !S.players[App.pid]) { const c = App.code; store.removeItem('mafia_pid_' + c); leaveRoom(); return renderEntry({ room: c, msg: '방에서 나가졌어요. 다시 입장해 주세요.' }); }
+  const m = S.meta; const ph = m.phase;
+  setSky(PH[ph] ? PH[ph].sky : 'night');
+  const key = ph + m.day + ':' + ((S.pub && S.pub.nom && S.pub.nom.round) || 0);
+  if (key !== App.lastKey) {
+    if (App.lastKey && PH[ph] && PH[ph].phone && navigator.vibrate) { try { navigator.vibrate([180, 80, 180]); } catch (e) {} }
+    if (App.lastKey) window.scrollTo(0, 0);
+    App.lastKey = key; App.lookSel = null;
+  }
+  const y = window.scrollY;
+  const dead = !isAlive(App.pid);
+  $('#app').innerHTML = `<div class="S">
+    <header class="bar"><div class="me"><b>${me().num || '·'}</b>${esc(me().name)}${dead ? ' 👻' : ''}</div>
+      <div class="ph">${ph !== 'lobby' && ph !== 'end' ? m.day + '일차<br>' : ''}${PH[ph].icon} ${PH[ph].name}</div></header>
+    ${sBody()}
+    ${ph !== 'lobby' ? '<button class="btn ghosty big sbtn" data-a="drawer">📒 직업 · 수첩</button>' : ''}
+  </div>
+  <div class="drawer ${App.drawer ? 'open' : ''}">${App.drawer ? drawerHTML() : ''}</div>`;
+  window.scrollTo(0, y);
+}
+function drawerHTML() {
+  const logs = notebook();
+  return `<div class="dr-in"><div class="dr-top"><h2>📒 직업 · 수첩</h2><button data-a="drawer">닫기</button></div>
+    <div style="margin-top:12px">${roleCard()}</div>
+    ${mySec().role ? `<section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>` : ''}
+    <section class="s-card logs"><h3>수첩</h3>${logs.length ? logsHTML(logs) : '<p class="muted">아직 없어요</p>'}</section></div>`;
+}
+const pocket = (icon, title, sub) => `<section class="pocket"><div class="pi">${icon}</div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ''}</section>`;
+const doneBtn = (a, done, ok, label) => `<button class="btn big sbtn" data-a="${a}" ${ok ? '' : 'disabled'}>${done ? '✓ 제출 완료' : label}</button>`;
+function sBody() {
+  const m = S.meta, ph = m.phase, d = m.day, sc = mySec(), dead = !isAlive(App.pid);
+  const sideCard = sideChoiceCard();
+  if (ph === 'lobby') return `<section class="hero"><div class="big-num">${me().num || '·'}</div><h2>입장 완료!</h2></section>`;
+  if (ph === 'role') {
+    const ok = actDay(0)[App.pid] && actDay(0)[App.pid].ok;
+    return `<section class="s-card">${roleCard()}</section>
+      <section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>
+      <button class="btn big sbtn" data-a="ok" ${ok ? 'disabled' : ''}>${ok ? '✓ 확인 완료' : '확인했어요'}</button>`;
+  }
+  if (dead && COURT.includes(ph) && ph !== 'verdict') return sideCard + pocket('💤', '엎드려 주세요', '');
+  if (ph === 'talk') return (dead ? sideCard : '') + pocket('📵', '휴대폰을 넣으세요', dead ? '👻 유령도 대화 OK' : '');
+  if (ph === 'court') return pocket('🏛️', '광장 토론', '');
+  if (ph === 'nominate') {
+    const A = myAct(d); const others = aliveIds().filter(x => x !== App.pid);
+    return `<section class="s-card"><h3>🗳️ 처형 후보 지명 <small>상위 ${status().mafia}명</small></h3>
+        <div class="chips">${others.map(id => chip(id, A.nv === id, 'nv', '', teamOf(App.pid) === 'mafia' && arr(sc.mates).includes(id) ? 'mate' : '')).join('')}<button class="chip wide ${A.nv === 'skip' ? 'on' : ''}" data-a="nv" data-id="skip">기권</button></div></section>
+      ${doneBtn('nvDone', A.nvd, A.nv, A.nv ? '제출' : '1명 고르기')}`;
+  }
+  if (ph === 'runoff') {
+    const A = myAct(d); const nom = nomNow(); const tied = arr(nom && nom.tied);
+    return `<section class="s-card"><h3>🔁 결선 투표${nom.round > 1 ? ` ${nom.round}차` : ''} <small>${nom.slots}명 선택</small></h3>
+        <div class="chips">${tied.filter(x => x !== App.pid).map(id => chip(id, A.rv === id, 'rv')).join('')}<button class="chip wide ${A.rv === 'skip' ? 'on' : ''}" data-a="rv" data-id="skip">기권</button></div></section>
+      ${doneBtn('rvDone', A.rvd, A.rv, A.rv ? '제출' : '1명 고르기')}`;
+  }
+  if (ph === 'defense') {
+    const mine = candsNow().includes(App.pid);
+    return `${mine ? '<section class="s-card alert"><h3>🎤 당신은 후보예요</h3></section>' : ''}<section class="s-card"><h3>처형 후보</h3>${candListHTML(false)}</section>`;
+  }
+  if (ph === 'judge') {
+    const A = myAct(d); const cs = candsNow().filter(x => x !== App.pid); const j = A.j || {};
+    return `<section class="s-card"><h3>⚖️ 최종 판정 <small>${needKill(aliveIds().length - 1)}표↑ 처형</small></h3>
+      <div class="jlist">${cs.map(id => `<div class="jrow"><span class="jn"><b>${num(id)}</b> ${esc(nm(id))}</span>
+        <button class="jb k ${j[id] === 'k' ? 'on' : ''}" data-a="jv" data-id="${id}" data-v="k">처형</button>
+        <button class="jb s ${j[id] === 's' ? 'on' : ''}" data-a="jv" data-id="${id}" data-v="s">살림</button></div>`).join('') || '<p class="muted">판정할 후보 없음</p>'}</div></section>
+      ${doneBtn('jDone', A.jd, true, '제출')}`;
+  }
+  if (ph === 'verdict') {
+    const v = S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null;
+    return `${sideCard}<section class="s-card">${verdictHTML(v, false)}</section>`;
+  }
+  if (ph === 'night') return dead ? sideCard + ghostNight(d) : aliveNight(d);
+  if (ph === 'morning') {
+    const mo = S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null;
+    const mine = arr(sc.log).filter(l => l.d === d - 1 && l.ph === 'n');
+    return `${sideCard}<section class="s-card news">${newsHTML(mo)}</section>
+      ${mine.length ? `<section class="s-card logs"><h3>📒 밤사이</h3>${logsHTML(mine)}</section>` : ''}`;
+  }
+  if (ph === 'end') {
+    const e = S.pub && S.pub.end; if (!e) return '';
+    const mySide = e.sides && e.sides[App.pid];
+    const res = e.w === 'none' ? '' : (mySide === e.w ? '🎉 승리!' : '😢 패배');
+    return `<section class="endbox"><div class="end-win" style="font-family:var(--fd)">${e.w === 'citizen' ? '🙂 시민 편 승리' : e.w === 'mafia' ? '🔪 마피아 편 승리' : '게임 중단'}</div><p class="me-res">${res}</p></section>
+      <section class="s-card rl"><h3>모두의 정체</h3>${sortedIds().map(id => { const r = e.roles && e.roles[id]; const sd = e.sides && e.sides[id];
+        return `<p class="${sd === 'mafia' ? 'm' : ''}"><span>${esc(who(id))}${isAlive(id) ? '' : ` 👻${sd === 'mafia' ? '마피아 편' : '시민 편'}`}</span><span>${r ? ROLES[r].emoji + ' ' + ROLES[r].name : ''}</span></p>`; }).join('')}</section>`;
+  }
+  return '';
+}
+function aliveNight(d) {
+  const sc = mySec(); const r = sc.role; const A = myAct(d); const alive = aliveIds(); const pk = ST().pk;
+  const others = alive.filter(x => x !== App.pid);
+  let roleSec = '';
+  if (r === 'mafia' && d === 1) {
+    const mates = arr(sc.mates);
+    roleSec = `<section class="s-card alert"><h3>🤝 동료 확인</h3>${mates.length ? matesLine(mates, '🔪') : '<p class="mates">마피아는 나 혼자</p>'}<p class="muted">암살은 내일 밤부터</p></section>`;
+  } else if (r === 'mafia') {
+    const mates = arr(sc.mates); const picks = {};
+    mates.forEach(x => { const t = actDay(d)[x] && actDay(d)[x].n; if (t && isAlive(x)) (picks[t] = picks[t] || []).push(x); });
+    roleSec = `<section class="s-card"><h3>🔪 암살 <small>1명 · 동료와 겹치지 않게</small></h3>
+      ${matesLine(mates, '🤝')}
+      <div class="chips">${others.map(id => chip(id, A.n === id, 'nact', picks[id] ? `<i class="pk">${picks[id].map(num).join(',')}번</i>` : '', mates.includes(id) ? 'mate' : '')).join('')}</div></section>`;
+  } else if (r === 'police') {
+    const ns = arr(A.ns); const ck = new Set(arr(sc.checked));
+    const tp = new Set(sc.tpk && sc.tpk.d === d ? arr(sc.tpk.ids) : []);
+    roleSec = `<section class="s-card"><h3>🚓 조사 <small>${ns.length} / ${pk}</small></h3>
+      <div class="chips">${others.map(id => chip(id, ns.includes(id), 'pchk', tp.has(id) ? '<i class="pk tp">경찰 선택</i>' : ck.has(id) ? '<i class="pk ck">조사함</i>' : '')).join('')}</div></section>`;
+  } else if (r === 'doctor' && d === 1) {
+    roleSec = '<section class="s-card"><h3>💉 오늘은 쉬어요</h3></section>';
+  } else if (r === 'doctor') {
+    roleSec = `<section class="s-card"><h3>💉 보호 <small>1명${sc.lastProtect ? ' · 어제 사람 X' : ''}</small></h3>
+      <div class="chips">${alive.map(id => chip(id, A.n === id, 'nact', '', id === sc.lastProtect ? 'off' : '')).join('')}</div></section>`;
+  }
+  const susPool = r === 'mafia' ? others.filter(x => !arr(sc.mates).includes(x)) : others;
+  return `${roleSec}
+    <section class="s-card"><h3>🤔 의심 가는 사람</h3>
+      <div class="chips">${susPool.map(id => chip(id, A.s === id, 'sus')).join('')}</div></section>
+    ${doneBtn('nightDone', A.nd, true, '완료')}`;
+}
+function ghostNight(d) {
+  if (!sideOf(App.pid)) return '';
+  const A = myAct(d); const alive = aliveIds(); const sc = mySec();
+  const look = arr(sc.looks)[0]; const sel = App.lookSel && alive.includes(App.lookSel) ? App.lookSel : null;
+  const body = look
+    ? `<div class="look">${esc(who(look.t))}<br><b>${ROLES[look.r].emoji} ${ROLES[look.r].name}</b></div>${look.d !== d ? '<p class="muted" style="margin-top:6px">이미 사용했어요</p>' : ''}`
+    : A.look ? '<p class="muted">…</p>'
+    : `<div class="chips">${alive.map(id => chip(id, App.lookSel === id, 'lsel')).join('')}</div>
+       <button class="btn sbtn" style="width:100%" data-a="look" ${sel ? '' : 'disabled'}>${sel ? `${esc(who(sel))} 투시 (1회뿐)` : '1명 고르기'}</button>`;
+  const known = mafiaKnownForGhost();
+  return `<section class="s-card"><h3>👁 ${SKILL} <small>게임 중 1회</small></h3>
+      ${known.length ? matesLine(known, '🔪') : ''}${body}</section>
+    ${doneBtn('nightDone', A.nd, true, '완료')}`;
+}
+
+/* =====================================================================
+   이벤트
+   ===================================================================== */
+async function onAction(a, el) {
+  const id = el.dataset.id;
+  if (a === 'join') return studentJoin();
+  if (a === 'rejoin') return studentRejoin();
+  if (a === 'create') return teacherCreate();
+  if (a === 'open') return teacherOpen();
+  if (a === 'resume') return teacherResume();
+  if (a === 'demo') return startDemo();
+  if (App.demo) {
+    if (a === 'dview') { App.view = el.dataset.v; App.slides = false; App.admin = false; window.scrollTo(0, 0); return renderDemo(); }
+    if (a === 'dnext') return goNext();
+    if (a === 'dghost') {
+      const d = S.meta.day; const by = ['night', 'morning'].includes(S.meta.phase) ? 'night' : 'vote';
+      return DB.update(roomPath(), { [`players/${App.pid}/alive`]: false, [`players/${App.pid}/death`]: { d, by } });
+    }
+    if (a === 'dquit') { leaveRoom(); history.replaceState(null, '', location.pathname); return renderEntry(); }
+  }
+
+  if (App.mode === 'teacher') {
+    const m = S.meta; const st = ST();
+    if (a === 'setopen') { App.setOpen = !App.setOpen; return rerender(); }
+    if (a === 'slides') { App.slides = !App.slides; App.admin = false; return renderOverlay(); }
+    if (a === 'slnext') { App.slide++; return renderOverlay(); }
+    if (a === 'slprev') { App.slide--; return renderOverlay(); }
+    if (a === 'admin') { App.admin = !App.admin; App.slides = false; return renderOverlay(); }
+    if (a === 'sound') { App.sound = !App.sound; if (App.sound) chime('day'); return rerender(); }
+    if (a === 'takeover') return DB.update(roomPath('meta'), { hostId: App.hostId });
+    if (!App.active) return;
+    if (a === 'kick') { if (confirm(`${nm(id)} 님을 방에서 내보낼까요?`)) DB.set(roomPath('players/' + id), null); return; }
+    if (a === 'bot') {
+      const ids = Object.keys(S.players || {}); const k = el.dataset.n === 'fill' ? Math.max(0, 24 - ids.length) : el.dataset.n === 'max' ? Math.max(0, MAX_PLAYERS - ids.length) : (ids.length < MAX_PLAYERS ? 1 : 0);
+      const used = new Set(ids.map(x => P(x).name)); const up = {}; let t = DB.now();
+      for (let i = 0; i < k; i++) { let n = BOT_NAMES.find(b => !used.has('봇 ' + b)); n = n ? '봇 ' + n : '봇 ' + rid(3); used.add(n); up['players/b' + rid(8)] = { name: n, bot: true, joined: t++, rejoin: '000' }; }
+      return k ? DB.update(roomPath(), up) : null;
+    }
+    if (a === 'botclear') { const up = {}; for (const x of Object.keys(S.players || {})) if (P(x).bot) up['players/' + x] = null; return DB.update(roomPath(), up); }
+    if (a === 'comp') {
+      const r = el.dataset.r, v = +el.dataset.v; const comp = Object.assign({}, st.comp || defaultComp(Object.keys(S.players || {}).length));
+      comp[r] = Math.max(LIMITS[r][0], Math.min(LIMITS[r][1], (comp[r] || 0) + v));
+      return DB.update(roomPath('meta/settings'), { comp });
+    }
+    if (a === 'compreset') return DB.update(roomPath('meta/settings'), { comp: null });
+    if (a === 'pk') return DB.update(roomPath('meta/settings'), { pk: Math.max(1, Math.min(3, st.pk + +el.dataset.v)) });
+
+    if (a === 'start') {
+      const n = Object.keys(S.players || {}).length; const comp = st.comp || defaultComp(n);
+      if (n < MIN_PLAYERS || n > MAX_PLAYERS) return alert(`${MIN_PLAYERS}~${MAX_PLAYERS}명일 때 시작할 수 있어요.`);
+      if (comp.mafia + comp.police + comp.doctor >= n) return alert('직업 수가 너무 많아요. 게임 설정에서 줄여 주세요.');
+      if (!App.demo && !confirm(`${n}명으로 게임을 시작할까요? 시작하면 새로 들어올 수 없어요.`)) return;
+      App.slides = false; App.admin = false; chime('night');
+      return advance();
+    }
+    if (a === 'next') return goNext();
+    void m;
+    if (a === 'abort') { if (confirm('게임을 중단하고 모두의 정체를 공개할까요?')) DB.update(roomPath(), endUpdates({ w: 'none', why: '선생님이 게임을 중단했어요.' })); return; }
+    if (a === 'reset') { if (App.demo || confirm('같은 학생들로 새 게임을 준비할까요? (입장 화면으로 돌아가요)')) DB.update(roomPath(), resetUpdates()); return; }
+    return;
+  }
+
+  if (App.mode === 'student') {
+    const m = S.meta; if (!m) return; const d = m.day; const alive = isAlive(App.pid); const sc = mySec();
+    const W = o => DB.update(roomPath(`act/d${d}/${App.pid}`), o);
+    if (a === 'drawer') { App.drawer = !App.drawer; return rerender(); }
+    if (a === 'ok' && m.phase === 'role') return DB.update(roomPath(`act/d0/${App.pid}`), { ok: true });
+    if (a === 'sidesel') { App.sideSel = el.dataset.v; return rerender(); }
+    if (a === 'sidego') { if (!App.sideSel || alive || sideOf(App.pid)) return; return DB.update(roomPath('choice'), { [App.pid]: App.sideSel }); }
+    const A = myAct(d);
+    if (m.phase === 'nominate' && alive) {
+      if (a === 'nv') return W({ nv: A.nv === id ? null : id, nvd: null });
+      if (a === 'nvDone') return A.nv ? W({ nvd: true }) : null;
+    }
+    if (m.phase === 'runoff' && alive) {
+      if (a === 'rv') return W({ rv: A.rv === id ? null : id, rvd: null });
+      if (a === 'rvDone') return A.rv ? W({ rvd: true }) : null;
+    }
+    if (m.phase === 'judge' && alive) {
+      if (a === 'jv') { if (id === App.pid) return; const j = Object.assign({}, A.j || {}); j[id] = j[id] === el.dataset.v ? null : el.dataset.v; return W({ j, jd: null }); }
+      if (a === 'jDone') return W({ jd: true });
+    }
+    if (m.phase === 'night') {
+      if (alive) {
+        if (a === 'nact') { if (d === 1 && (sc.role === 'doctor' || sc.role === 'mafia')) return; if (sc.role === 'doctor' && id === sc.lastProtect) return; return W({ n: A.n === id ? null : id }); }
+        if (a === 'pchk') { let ns = arr(A.ns); if (ns.includes(id)) ns = ns.filter(x => x !== id); else { if (ns.length >= ST().pk) { if (ST().pk === 1) ns = []; else return; } ns = [...ns, id]; } return W({ ns }); }
+        if (a === 'sus') return W({ s: A.s === id ? null : id });
+        if (a === 'nightDone') return W({ nd: true });
+      } else {
+        if (!sideOf(App.pid)) return;
+        if (a === 'lsel') { if (A.look || arr(sc.looks).length) return; App.lookSel = App.lookSel === id ? null : id; return rerender(); }
+        if (a === 'look') { if (A.look || !App.lookSel || arr(sc.looks).length) return; return W({ look: App.lookSel }); }
+        if (a === 'nightDone') return W({ nd: true });
+      }
+    }
+  }
+}
+// 최후의 발언: 다음 발언자로 넘기기, 마지막 사람이면 최종 판정으로
+function nextSpeaker() {
+  const sp = speaker(); if (!sp || !App.active) return advance();
+  if (sp.last) return advance();
+  return DB.update(roomPath('meta'), { spk: sp.i + 1, spkAt: DB.now() });
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
+  if (el.tagName === 'SUMMARY') e.preventDefault();
+  onAction(el.dataset.a, el);
+});
+document.addEventListener('keydown', e => {
+  if (App.mode === 'teacher' && App.slides) {
+    if (e.key === 'ArrowRight') { App.slide++; renderOverlay(); }
+    if (e.key === 'ArrowLeft') { App.slide--; renderOverlay(); }
+    if (e.key === 'Escape') { App.slides = false; renderOverlay(); }
+  }
+  if (e.key === 'Enter' && e.target.id === 'inName') studentJoin();
+  // 선생님 화면: → / PageDown(발표용 리모컨)으로 다음 단계
+  const tv = App.mode === 'teacher' && App.active && !App.slides && !App.admin && S.meta && S.meta.phase !== 'end' && S.meta.phase !== 'lobby';
+  if (tv && (e.key === 'ArrowRight' || e.key === 'PageDown') && !/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) { e.preventDefault(); goNext(); }
+});
+// 직업 카드: 꾹 누르는 동안만 보이기
+document.addEventListener('pointerdown', e => { const h = e.target.closest('.hold'); if (h) h.classList.add('show'); });
+['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => document.querySelectorAll('.hold.show').forEach(x => x.classList.remove('show'))));
+document.addEventListener('contextmenu', e => { if (e.target.closest('.hold')) e.preventDefault(); });
+
+/* 시작 */
+(function init() {
+  const room = new URLSearchParams(location.search).get('room');
+  if (room) { const pid = store.getItem('mafia_pid_' + room); if (pid) return enterStudent(room, pid); }
+  renderEntry({ room: room || '' });
+})();
+</script>
+</body>
+</html>
