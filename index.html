@@ -280,6 +280,20 @@ body.night .tok.t-mafia{background:#6A2C4F}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+.rec{display:grid;gap:10px}
+.rj{border-radius:14px;padding:10px 12px;background:var(--card2,rgba(127,127,127,.12))}
+.rj.ex{box-shadow:inset 4px 0 0 var(--blood)}
+.rj-h{display:flex;justify-content:space-between;gap:8px;font-size:15px;margin-bottom:6px}
+.rj-h span{font-weight:800;color:var(--muted)}
+.rj-l{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px;font-size:13px}
+.rj-l em{font-style:normal;font-weight:800;min-width:42px;margin-right:2px}
+.rj-l em small{color:var(--muted);font-weight:700}
+.rj-l em.k{color:var(--blood)} .rj-l em.s{color:#3E7BE6}
+.rp{display:inline-flex;align-items:baseline;gap:3px;background:var(--card,#fff);border-radius:8px;padding:2px 6px;font-weight:800;font-size:13px}
+.rp i{font-style:normal;font-weight:600;color:var(--muted);font-size:11px}
+.rec-t{border:0;background:none;color:var(--muted);font:700 14px var(--fb,inherit);text-align:left;padding:4px 0;cursor:pointer}
+.rec-n{display:grid;gap:2px}
+.rsub{font-weight:800;font-size:13px;margin-top:6px}
 /* ---- 기본형 v3 ---- */
 #net{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--blood);color:#fff;font-weight:800;text-align:center;padding:8px 12px;transform:translateY(-100%);transition:transform .3s}
 #net.show{transform:none}
@@ -518,6 +532,9 @@ const ROLES = {
   citizen: { name: '시민',   team: 'citizen', emoji: '🙂', short: '대화와 추리로 마피아를 찾음' }
 };
 const SKILL = '영혼 투시';
+// 영혼 투시 결과: 직업이 있는지(마피아·경찰·의사 중 하나)만 보여 줌. 시민이면 '직업 없음'
+const visOf = t => (roleOf(t) === 'citizen' ? 'none' : 'has');
+const visTxt = r => (r === 'none' ? '🙂 직업 없음 (시민)' : r === 'has' ? '❗ 직업 있음 (마피아·경찰·의사 중 하나)' : (ROLES[r] ? ROLES[r].emoji + ' ' + ROLES[r].name : ''));
 function roleDesc(r) {
   const pk = ST().pk; const team = compNow().police > 1;
   return {
@@ -527,7 +544,7 @@ function roleDesc(r) {
     citizen: '추리로 마피아를 찾아요'
   }[r];
 }
-const LIMITS = { mafia: [1, 9], police: [0, 5], doctor: [0, 5] };
+const LIMITS = { mafia: [1, 12], police: [0, 6], doctor: [0, 3] };
 const BOT_NAMES = ['다람쥐','부엉이','고슴도치','수달','너구리','펭귄','판다','여우','코알라','햄스터','오리','거북이','토끼','고래','사슴','두더지','미어캣','알파카','치타','물개','앵무새','하마','기린','족제비','고양이','강아지','다슬기','올빼미','청설모','호랑이'];
 const COURT = ['court', 'nominate', 'runoff', 'defense', 'judge', 'verdict'];
 const PH = {
@@ -545,8 +562,9 @@ const PH = {
   end:      { name: '게임 끝',     icon: '🏁', sky: 'night' }
 };
 
-// 인원별 추천 구성 [마피아, 경찰, 의사]: 인원마다 시뮬레이션해서 시민 승률이 50%에 가장 가까운 조합 (3~9명은 연습·테스트용)
-const COMP_BY_N = {3:[1,1,0],4:[1,1,0],5:[1,1,1],6:[2,1,1],7:[2,1,1],8:[2,1,1],9:[3,2,1],10:[3,2,1],11:[3,1,3],12:[3,1,2],13:[3,1,2],14:[4,2,2],15:[4,2,2],16:[5,3,2],17:[4,2,2],18:[5,3,2],19:[5,2,3],20:[5,2,3],21:[5,2,3],22:[5,2,3],23:[6,3,3],24:[6,3,3],25:[6,3,3],26:[6,3,2],27:[6,3,2],28:[6,3,2],29:[7,4,3],30:[7,3,4]};
+// 인원별 추천 구성 [마피아, 경찰, 의사]: 의사는 1명 고정. 첫날엔 분위기로도 처형하고 경찰·유령 말고는 확실한 정보가 적다고 가정해,
+// 처음 하는 판과 작전에 익숙한 판의 중간이 시민 승률 50%가 되도록 시뮬레이션으로 고른 조합 (3~9명은 연습·테스트용)
+const COMP_BY_N = {3:[1,1,0],4:[1,1,0],5:[1,1,1],6:[2,2,1],7:[2,2,1],8:[3,3,1],9:[2,1,1],10:[3,2,1],11:[3,2,1],12:[3,2,1],13:[4,3,1],14:[4,3,1],15:[5,4,1],16:[5,4,1],17:[5,4,1],18:[5,4,1],19:[5,3,1],20:[5,3,1],21:[6,4,1],22:[6,4,1],23:[6,4,1],24:[6,4,1],25:[6,3,1],26:[6,3,1],27:[7,4,1],28:[7,4,1],29:[7,4,1],30:[7,4,1]};
 function defaultComp(n) {
   n = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, n || 24));
   const r = COMP_BY_N[n];
@@ -658,7 +676,7 @@ function startGameUpdates() {
 /* ---- 봇 행동 (체험·테스트용) ---- */
 function botHot(d) {
   const mo = S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null;
-  return mo ? arr(mo.suspects).map(s => s.id).filter(isAlive) : [];
+  void mo; return [];
 }
 function botNominateUpdates(d) {
   const up = {}; const alive = aliveIds(); const hot = botHot(d);
@@ -700,7 +718,7 @@ function botNightUpdates(d) {
     if (!isAlive(b)) {
       if (alive.length && !arr(sc.looks).length && (Math.random() < 0.35 || alive.length <= 8)) {
         const t = pick(alive);
-        up[base + '/look'] = t; up[`secret/${b}/looks`] = [{ d, t, r: roleOf(t) }];
+        up[base + '/look'] = t; up[`secret/${b}/looks`] = [{ d, t, r: visOf(t) }];
       }
       up[base + '/nd'] = true; continue;
     }
@@ -708,8 +726,6 @@ function botNightUpdates(d) {
     if (r === 'mafia' && d > 1) { const t = alive.filter(x => x !== b && (roleOf(x) !== 'mafia' || Math.random() < 0.04)); if (t.length) up[base + '/n'] = pick(t); }
     if (r === 'police') { const ck = new Set(arr(sc.checked)); let pool = others.filter(x => !ck.has(x)); if (!pool.length) pool = others; up[base + '/ns'] = shuffle(pool).slice(0, pk); }
     if (r === 'doctor' && d > 1) { const pool = alive.filter(x => x !== sc.lastProtect); if (pool.length) up[base + '/n'] = pick(pool); }
-    const sp = others.filter(x => !(r === 'mafia' && roleOf(x) === 'mafia'));
-    if (sp.length) up[base + '/s'] = pick(sp);
     up[base + '/nd'] = true;
   }
   return up;
@@ -857,19 +873,13 @@ function resolveNightUpdates(d) {
     }
   }
 
-  const sv = {};
-  for (const p of alive) {
-    const t = A[p] && A[p].s; if (!t || t === p || !aliveSet.has(t)) continue;
-    sv[t] = (sv[t] || 0) + 1; if (R(t) === 'mafia' && R(p) !== 'mafia') h.susHits[p] = (h.susHits[p] || 0) + 1;
-  }
-  const suspects = Object.keys(sv).filter(id => !killedList.includes(id)).sort((a, b) => sv[b] - sv[a] || num(a) - num(b)).slice(0, 3).map(id => ({ id, c: sv[id] }));
 
   const aliveAfter = alive.filter(id => !killedList.includes(id));
   const mafiaLeft = aliveAfter.filter(id => R(id) === 'mafia').length;
   const win = winCheck(aliveAfter); h.pendingWin = win || null;
   const line = d === 1 ? '🌙 첫날 밤, 마피아들이 서로를 확인했어요. 오늘 밤부터 학살이 시작됩니다…'
     : killedList.length ? `🌙 지난밤 ${killedList.map(who).join(', ')}님이 마피아에게 암살당했습니다.` : '🌙 지난밤에는 아무도 죽지 않았습니다.';
-  up['pub/morning'] = { day: d + 1, line, killed: killedList.length ? killedList : null, suspects, alive: aliveAfter.length, mafia: mafiaLeft };
+  up['pub/morning'] = { day: d + 1, line, killed: killedList.length ? killedList : null, alive: aliveAfter.length, mafia: mafiaLeft };
   up['pub/status'] = { day: d + 1, alive: aliveAfter.length, mafia: mafiaLeft };
   up[`rec/d${d}/night`] = { targets: targets.length ? targets : null, killed: killedList.length ? killedList : null, prot: prot.size ? [...prot] : null };
   for (const id in logs) up[`secret/${id}/log`] = logs[id];
@@ -882,7 +892,13 @@ function endUpdates(win) {
   sortedIds().forEach(id => { roles[id] = roleOf(id); sides[id] = sideOf(id) || 'citizen'; });
   const best = o => { const v = Object.values(o).filter(x => typeof x === 'number'); const mx = Math.max(0, ...v); return mx >= 1 ? Object.keys(o).filter(id => o[id] === mx).slice(0, 3) : []; };
   const aw = []; let x;
-  if ((x = best(h.susHits)).length) aw.push({ e: '🔎', t: '명탐정', ids: x, n: `밤마다 마피아를 ${h.susHits[x[0]]}번 지목` });
+  const hits = {};
+  for (let d = 1; d <= ((S.meta && S.meta.day) || 0); d++) {
+    const A = actDay(d), court = (S.rec || {})['d' + d] && S.rec['d' + d].court;
+    for (const c of arr(court && court.cands)) if (roleOf(c) === 'mafia')
+      for (const v in A) if (roleOf(v) !== 'mafia' && A[v] && A[v].j && A[v].j[c] === 'k') hits[v] = (hits[v] || 0) + 1;
+  }
+  if ((x = best(hits)).length) aw.push({ e: '🔎', t: '명탐정', ids: x, n: `최종 판정에서 마피아 처형에 ${hits[x[0]]}번 찬성` });
   if ((x = best(h.finds)).length) aw.push({ e: '🚓', t: '날카로운 경찰', ids: x, n: `마피아를 ${h.finds[x[0]]}명 찾아냄` });
   if ((x = best(h.saves)).length) aw.push({ e: '💉', t: '생명의 은인', ids: x, n: `${h.saves[x[0]]}명을 살림` });
   if ((x = best(h.escapes)).length) aw.push({ e: '🎤', t: '명변론가', ids: x, n: `최종 판정에서 ${h.escapes[x[0]]}번 살아남음` });
@@ -943,7 +959,7 @@ const MafiaStats = {
     const G = [['게임ID', '날짜', '시작', '소요(분)', '인원', '마피아', '경찰', '의사', '시민', '승리', '끝난 시점', '진행 일수',
       '처형', '처형된 마피아', '처형된 시민편', '암살', '의사 구조', '경찰이 찾은 마피아', '결선 투표', '판정에서 살아남은 후보', '연습판']];
     const PR = [['게임ID', '날짜', '인원', '연습판', '번호', '이름', '직업', '최종 편', '결과', '생존', '사망 일차', '사망 원인',
-      '투표 참여율', '지명 적중률', '판정 정확도', '밤 의심 적중률', '받은 지명표', '후보가 된 횟수', '판정에서 살아남음',
+      '투표 참여율', '지명 적중률', '판정 정확도', '받은 지명표', '후보가 된 횟수', '판정에서 살아남음',
       '조사 수', '찾은 마피아', '보호 수', '구조 수', '암살 시도', '암살 성공', '유령 편', '영혼 투시 결과', '수상']];
     const VT = [['게임ID', '일차', '단계', '투표한 학생', '투표자 직업', '대상', '대상 직업', '값', '연습판']];
     const agg = {}, byN = {}, byRole = {};
@@ -984,14 +1000,14 @@ const MafiaStats = {
         // 밤
         if (!D.night) continue; // 재판에서 게임이 끝났거나 밤 도중 중단된 날
         for (const id of ids) if (atNight(id, d) && st[id]) {
-          st[id].opp++; const t = s[id];
-          if (t) { st[id].sub++; st[id].sPick++; if (T(t) === 'mafia') st[id].sMaf++; V(d, '밤 의심', id, t); }
+          const t = s[id];
+          if (t) { st[id].sPick++; if (T(t) === 'mafia') st[id].sMaf++; V(d, '밤 의심', id, t); }
           const a = n[id];
           if (R(id) === 'mafia' && d > 1 && a) { st[id].kTry++; if (killed.has(a)) st[id].kHit++; V(d, '암살 지목', id, a, killed.has(a) ? '성공' : '실패'); }
           if (R(id) === 'doctor' && d > 1 && a) { st[id].prot++; const ok = targets.has(a) && prot.has(a); if (ok) { st[id].saves++; gs.sv++; } V(d, '보호', id, a, ok ? '구조' : ''); }
           if (R(id) === 'police') for (const t2 of L(ns[id])) { st[id].checks++; if (T(t2) === 'mafia') { st[id].found++; foundSet.add(t2); } V(d, '조사', id, t2, T(t2) === 'mafia' ? '마피아' : '아님'); }
         }
-        for (const id in lk) if (PL[id]) V(d, '영혼 투시', id, lk[id], RN[R(lk[id])] || '');
+        for (const id in lk) if (PL[id]) V(d, '영혼 투시', id, lk[id], R(lk[id]) === 'citizen' ? '직업 없음' : '직업 있음');
         gs.kl += killed.size;
       }
       const c = g.comp || {}; const N = g.n || ids.length;
@@ -1001,10 +1017,10 @@ const MafiaStats = {
       const awards = {}; for (const a of L(g.aw)) for (const id of L(a.ids)) (awards[id] = awards[id] || []).push(a.t);
       for (const id of ids) {
         const p = PL[id], x = st[id], citT = T(id) === 'citizen', win = !aborted && g.w === p.side, dt = dth(id);
-        const look = p.look ? `${nmO(p.look.t)}: ${RN[p.look.r] || ''}` : '';
+        const look = p.look ? `${nmO(p.look.t)}: ${p.look.r === 'has' ? '직업 있음' : p.look.r === 'none' ? '직업 없음' : (RN[p.look.r] || '')}` : '';
         PR.push([gid, date, N, practice ? 'O' : '', p.num, p.name, RN[p.role], SN[p.side] || '', aborted ? '중단' : win ? '승' : '패',
           p.alive ? 'O' : 'X', dt ? dt.d : '', dt ? (dt.by === 'vote' ? '처형' : '암살') : '',
-          r3(div(x.sub, x.opp)), citT ? r3(div(x.nMaf, x.nPick)) : '', citT ? r3(div(x.jRight, x.jSub)) : '', citT ? r3(div(x.sMaf, x.sPick)) : '',
+          r3(div(x.sub, x.opp)), citT ? r3(div(x.nMaf, x.nPick)) : '', citT ? r3(div(x.jRight, x.jSub)) : '',
           x.recv, x.cand, x.surv, p.role === 'police' ? x.checks : '', p.role === 'police' ? x.found : '', p.role === 'doctor' ? x.prot : '', p.role === 'doctor' ? x.saves : '',
           p.role === 'mafia' ? x.kTry : '', p.role === 'mafia' ? x.kHit : '', p.alive ? '' : (SN[p.side] || ''), look, (awards[id] || []).join(', ')]);
         if (practice || aborted) continue;
@@ -1023,11 +1039,11 @@ const MafiaStats = {
       }
     }
     const ST2 = [['이름', '판 수', '승', '승률', '마피아', '경찰', '의사', '시민', '시민 편 승률', '마피아 승률', '끝까지 생존율', '처형당함', '암살당함',
-      '투표 참여율', '지명 적중률', '판정 정확도', '밤 의심 적중률', '수상', '마지막 참여']];
+      '투표 참여율', '지명 적중률', '판정 정확도', '수상', '마지막 참여']];
     for (const name of Object.keys(agg).sort((a, b) => agg[b].g - agg[a].g || a.localeCompare(b, 'ko'))) {
       const a = agg[name];
       ST2.push([name, a.g, a.w, r3(div(a.w, a.g)), a.role.mafia, a.role.police, a.role.doctor, a.role.citizen, r3(div(a.cw, a.cg)), r3(div(a.mw, a.mg)),
-        r3(div(a.alive, a.g)), a.ex, a.kl, r3(div(a.sub, a.opp)), r3(div(a.nMaf, a.nPick)), r3(div(a.jRight, a.jSub)), r3(div(a.sMaf, a.sPick)), a.aw, a.last]);
+        r3(div(a.alive, a.g)), a.ex, a.kl, r3(div(a.sub, a.opp)), r3(div(a.nMaf, a.nPick)), r3(div(a.jRight, a.jSub)), a.aw, a.last]);
     }
     const NS = [['인원', '판 수', '시민 승', '마피아 승', '시민 승률', '평균 진행 일수', '평균 소요(분)']];
     for (const k of Object.keys(byN).map(Number).sort((a, b) => a - b)) { const b = byN[k]; NS.push([k, b.g, b.cw, b.mw, r3(div(b.cw, b.g)), r3(div(b.days, b.g)), b.mn ? r3(b.mins / b.mn) : '']); }
@@ -1035,10 +1051,9 @@ const MafiaStats = {
     for (const r of ['mafia', 'police', 'doctor', 'citizen']) { const x = byRole[r]; if (x) RS.push([RN[r], x.n, r3(div(x.w, x.n)), r3(div(x.alive, x.n)), r3(div(x.ex, x.n)), r3(div(x.kl, x.n))]); }
     const HELP = [['항목', '뜻'],
       ['연습판', '10명 미만이거나 테스트 봇이 섞인 판. 학생별 누적·인원별·직업별 승률에서는 빠짐 (선생님이 중단한 판도 제외)'],
-      ['투표 참여율', '후보 지명·최종 판정·밤 의심 지목을 낼 수 있었던 횟수 중 실제로 낸 비율 (안 내면 기권 처리됨)'],
+      ['투표 참여율', '후보 지명·최종 판정 표를 낼 수 있었던 횟수 중 실제로 낸 비율 (안 내면 기권 처리됨)'],
       ['지명 적중률', '시민 편(마피아가 아닌 학생)이 후보 지명 투표에서 실제 마피아를 고른 비율'],
       ['판정 정확도', '시민 편이 최종 판정에서 마피아는 처형, 시민은 살림을 고른 비율'],
-      ['밤 의심 적중률', '시민 편이 밤마다 고르는 의심 1명이 실제 마피아였던 비율 (아침 발표 의심 TOP3의 재료)'],
       ['받은 지명표', '그 판에서 다른 학생들에게 후보 지명 표를 받은 총 개수'],
       ['판정에서 살아남음', '후보가 됐지만 최종 판정에서 과반을 넘기지 않아 살아남은 횟수'],
       ['최종 편 / 유령 편', '살아 있으면 직업의 편, 죽은 뒤에는 유령으로서의 편 (처형된 시민은 직접 고름)'],
@@ -1198,7 +1213,7 @@ function hostSideEffects() {
     for (const id of deadIds()) {
       const t = A[id] && A[id].look; if (!t || !S.players[t]) continue;
       const looks = arr(sec(id).looks); if (looks.length) continue; // 영혼 투시는 게임 중 단 한 번
-      up[`secret/${id}/looks`] = [...looks, { d, t, r: roleOf(t) }];
+      up[`secret/${id}/looks`] = [...looks, { d, t, r: visOf(t) }];
       if (roleOf(t) === 'mafia' && sideOf(id) === 'citizen') { h.gFinds[id] = (h.gFinds[id] || 0) + 1; hc = true; }
     }
     if (hc) up['hs/gFinds'] = h.gFinds;
@@ -1464,11 +1479,10 @@ function lobbyHTML() {
 }
 function newsHTML(mo, compact) {
   if (!mo) return '';
-  const su = arr(mo.suspects);
   return `<div class="${compact ? 'clues' : 'mo'}">
     <p class="${compact ? '' : 'mo-line'} ${mo.killed ? 'kill' : 'safe'}">${esc(mo.line)}</p>
     <div class="stat2"><div><b>${mo.alive}</b><span>생존</span></div><div class="m"><b>${mo.mafia}</b><span>남은 마피아</span></div></div>
-    ${su.length ? `<p class="sus">🤔 의심 순위 ${su.map(s => `${esc(who(s.id))} <span class="muted">${s.c}</span>`).join(' · ')}</p>` : ''}</div>`;
+    </div>`;
 }
 function cluesHTML(d) {
   const mo = S.pub && S.pub.morning;
@@ -1500,6 +1514,30 @@ function verdictHTML(v, big) {
       <div class="vc-n"><span>처형 ${r.k}</span><span>살림 ${r.s}</span></div>
       <div class="vc-stamp">${r.ex ? '처형' : '생존'}</div></div>`; }).join('')}</div>
     <p class="muted vd-note">처형 ${v.need}표 이상이면 처형</p>`;
+}
+// 재판 기록: 그날 누가 누구를 지명했고, 후보마다 누가 처형·살림을 눌렀는지 (밤에 모두에게 공개)
+const atCourt = (id, d) => { const x = P(id).death; return !x || x.d >= d; };
+function recordHTML(d, opts = {}) {
+  const A = actDay(d), rc = (S.rec || {})['d' + d] || {}, court = rc.court || {};
+  const voters = sortedIds().filter(id => atCourt(id, d));
+  const pills = ids => ids.length ? ids.map(id => `<span class="rp">${num(id)}<i>${esc(nm(id))}</i></span>`).join('') : '<span class="muted">없음</span>';
+  const res = arr(court.res);
+  const judge = res.length ? res.map(r => {
+    const k = [], s = [], a = [];
+    for (const v of voters) { if (v === r.id) continue; const x = A[v] && A[v].j && A[v].j[r.id]; (x === 'k' ? k : x === 's' ? s : a).push(v); }
+    return `<div class="rj ${r.ex ? 'ex' : 'sv'}"><div class="rj-h"><b>${esc(who(r.id))}</b><span>${r.ex ? '처형' : '생존'} · ${r.k} : ${r.s}</span></div>
+      <div class="rj-l"><em class="k">처형</em>${pills(k)}</div><div class="rj-l"><em class="s">살림</em>${pills(s)}</div>
+      ${a.length ? `<div class="rj-l"><em>기권</em>${pills(a)}</div>` : ''}</div>`;
+  }).join('') : '<p class="muted">처형 후보가 없었어요</p>';
+  const group = b => { const g = {}; for (const v in b) { if (!b[v]) continue; (g[b[v]] = g[b[v]] || []).push(v); } return g; };
+  const nomB = {}; for (const v of voters) if (A[v] && A[v].nv) nomB[v] = A[v].nv;
+  const listG = g => Object.keys(g).sort((x, y) => (x === 'skip') - (y === 'skip') || g[y].length - g[x].length || num(x) - num(y))
+    .map(t => `<div class="rj-l"><em>${t === 'skip' ? '기권' : esc(who(t)) + ` <small>${g[t].length}표</small>`}</em>${pills(g[t].sort((a, b) => num(a) - num(b)))}</div>`).join('');
+  const runs = arr(rc.runs).map((ru, i) => `<p class="rsub">🔁 결선 ${i + 1}차</p>${listG(group((ru && ru.b) || {}))}`).join('');
+  const open = opts.open || App.recOpen === d;
+  return `<div class="rec">${judge}
+    <button class="rec-t" data-a="recnom" data-v="${d}">${open ? '▲' : '▼'} 후보 지명 기록</button>
+    ${open ? `<div class="rec-n">${listG(group(nomB)) || '<p class="muted">없음</p>'}${runs}</div>` : ''}</div>`;
 }
 function endHTML(e) {
   if (!e) return '';
@@ -1564,25 +1602,26 @@ const SLIDES = () => {
       <div><b>🔪 마피아 ${c.mafia}명</b>첫날 밤에 서로를 확인. 둘째 밤부터 각자 1명씩 암살</div>
       <div><b>🚓 경찰 ${c.police}명</b>밤마다 ${ST().pk}명씩 조사${c.police > 1 ? '. 결과는 경찰끼리 공유 (서로 누군지는 몰라요)' : ''}</div>
       <div><b>💉 의사 ${c.doctor}명</b>둘째 밤부터 밤마다 1명을 암살에서 지킴 (나 자신도 가능)</div>
-      <div><b>🙂 시민 ${cit}명</b>대화와 추리, 밤에는 의심 지목</div></div>`,
+      <div><b>🙂 시민 ${cit}명</b>대화와 추리, 밤에는 재판 기록 확인</div></div>`,
     `<h2>하루는 이렇게 흘러가요</h2><div class="flow">
       <div><b>📵 밀담</b><small>돌아다니며 대화 (유령도!)</small></div>
       <div><b>🏛️ 광장 재판</b><small>토론 → 후보 지명 → 최후의 발언 → 최종 판정</small></div>
       <div><b>🔨 판결</b><small>과반수면 처형</small></div>
-      <div><b>🌙 밤</b><small>모두 휴대폰을 만져요</small></div>
+      <div><b>🌙 밤</b><small>능력 사용 · 재판 기록 확인</small></div>
       <div><b>☀️ 아침</b><small>희생자 · 생존 인원 · 남은 마피아 수</small></div></div>`,
     `<h2>🏛️ 광장 재판</h2><div class="flow" style="grid-template-columns:repeat(4,1fr)">
       <div><b>① 토론</b><small>자리에서 지목하고 변론</small></div>
       <div><b>② 후보 지명</b><small>1명씩 투표, 상위 ‘남은 마피아 수’명이 후보. 경계에서 동점이면 동점자끼리 결선</small></div>
       <div><b>③ 최후의 발언</b><small>후보가 한 명씩 일어나 변론</small></div>
       <div><b>④ 최종 판정</b><small>후보마다 처형/살림, 과반수면 처형</small></div></div>
-     <p>처형된 사람의 정체는 공개하지 않아요. 다음 날 아침 ‘남은 마피아 수’로 짐작해야 해요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
+     <p>처형된 사람의 정체는 공개하지 않아요. 대신 <b>밤에 재판 기록</b>(누가 누구를 지명했고, 누가 처형·살림을 눌렀는지)이 모두의 휴대폰에 공개돼요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
     `<h2>👻 죽어도 끝이 아니에요</h2><div class="two">
       <div><b>편 정하기</b><p>마피아는 어떻게 죽든 마피아 편, 마피아가 아닌 사람이 암살당하면 시민 편이에요. 마피아는 동료도 암살할 수 있어서, 암살당한 유령이 꼭 시민 편인 건 아니에요. 투표로 처형된 경찰·의사·시민은 편을 직접 골라요.</p></div>
-      <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명의 직업을 들여다봐요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 밀담에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
+      <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명이 <b>직업이 있는지</b> 들여다봐요. ‘직업 있음’이면 마피아·경찰·의사 중 하나, ‘없음’이면 시민이에요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 밀담에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
      <p>유령은 투표할 수 없고, 광장 재판 동안 엎드려 있어요. 고른 편이 이기면 유령도 함께 승리!</p>`,
     `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>밀담·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>엎드린 유령이 고개 들기</p></div>
-     <div><b>얼마든지 OK</b><p>거짓말과 연기<br>다른 직업인 척하기<br>동맹 맺기, 배신하기</p></div></div>`
+     <div><b>얼마든지 OK</b><p>거짓말과 연기<br>다른 직업인 척하기<br>동맹 맺기, 배신하기</p></div></div>
+     <p>투표 기록도 게임 속 이야기예요. 게임이 끝나면 서운해하기 없기!</p>`
   ];
 };
 function renderOverlay() {
@@ -1663,7 +1702,7 @@ function roleCard() {
 function notebook() {
   const sc = mySec();
   const items = arr(sc.log).map(l => ({ d: l.d, tx: l.tx }));
-  arr(sc.looks).forEach(l => items.push({ d: l.d, tx: `👁 ${who(l.t)} = ${ROLES[l.r].emoji} ${ROLES[l.r].name}` }));
+  arr(sc.looks).forEach(l => items.push({ d: l.d, tx: `👁 ${who(l.t)} = ${visTxt(l.r)}` }));
   return items.sort((a, b) => b.d - a.d);
 }
 function logsHTML(list) { return list.map(l => `<p>${l.d ? `<small>${l.d}일</small>` : ''}${esc(l.tx)}</p>`).join(''); }
@@ -1709,7 +1748,15 @@ function drawerHTML() {
   return `<div class="dr-in"><div class="dr-top"><h2>📒 직업 · 수첩</h2><button data-a="drawer">닫기</button></div>
     <div style="margin-top:12px">${roleCard()}</div>
     ${mySec().role ? `<section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>` : ''}
-    <section class="s-card logs"><h3>수첩</h3>${logs.length ? logsHTML(logs) : '<p class="muted">아직 없어요</p>'}</section></div>`;
+    <section class="s-card logs"><h3>수첩</h3>${logs.length ? logsHTML(logs) : '<p class="muted">아직 없어요</p>'}</section>
+    ${recDays().map(d => `<section class="s-card"><h3>📜 ${d}일 재판 기록</h3>${recordHTML(d)}</section>`).join('')}</div>`;
+}
+// 기록을 볼 수 있는 날: 재판이 끝나고 밤이 된 날부터 (오늘 재판 기록은 밤에 공개)
+function recDays() {
+  const m = S.meta; if (!m || !m.day) return [];
+  const last = ['night', 'morning', 'end'].includes(m.phase) ? m.day : m.day - 1;
+  const out = []; for (let d = last; d >= 1; d--) if ((S.rec || {})['d' + d] && S.rec['d' + d].court) out.push(d);
+  return out;
 }
 const pocket = (icon, title, sub) => `<section class="pocket"><div class="pi">${icon}</div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ''}</section>`;
 const doneBtn = (a, done, ok, label) => `<button class="btn big sbtn" data-a="${a}" ${ok ? '' : 'disabled'}>${done ? '✓ 제출 완료' : label}</button>`;
@@ -1795,25 +1842,24 @@ function aliveNight(d) {
     roleSec = `<section class="s-card"><h3>💉 보호 <small>1명${sc.lastProtect ? ' · 어제 사람 X' : ''}</small></h3>
       <div class="chips">${alive.map(id => chip(id, A.n === id, 'nact', '', id === sc.lastProtect ? 'off' : '')).join('')}</div></section>`;
   }
-  const susPool = r === 'mafia' ? others.filter(x => !arr(sc.mates).includes(x)) : others;
   return `${roleSec}
-    <section class="s-card"><h3>🤔 의심 가는 사람</h3>
-      <div class="chips">${susPool.map(id => chip(id, A.s === id, 'sus')).join('')}</div></section>
-    ${doneBtn('nightDone', A.nd, true, '완료')}`;
+    <section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>
+    ${doneBtn('nightDone', A.nd, true, '확인 완료')}`;
 }
 function ghostNight(d) {
-  if (!sideOf(App.pid)) return '';
+  if (!sideOf(App.pid)) return `<section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>`;
   const A = myAct(d); const alive = aliveIds(); const sc = mySec();
   const look = arr(sc.looks)[0]; const sel = App.lookSel && alive.includes(App.lookSel) ? App.lookSel : null;
   const body = look
-    ? `<div class="look">${esc(who(look.t))}<br><b>${ROLES[look.r].emoji} ${ROLES[look.r].name}</b></div>${look.d !== d ? '<p class="muted" style="margin-top:6px">이미 사용했어요</p>' : ''}`
+    ? `<div class="look">${esc(who(look.t))}<br><b>${visTxt(look.r)}</b></div>${look.d !== d ? '<p class="muted" style="margin-top:6px">이미 사용했어요</p>' : ''}`
     : A.look ? '<p class="muted">…</p>'
     : `<div class="chips">${alive.map(id => chip(id, App.lookSel === id, 'lsel')).join('')}</div>
        <button class="btn sbtn" style="width:100%" data-a="look" ${sel ? '' : 'disabled'}>${sel ? `${esc(who(sel))} 투시 (1회뿐)` : '1명 고르기'}</button>`;
   const known = mafiaKnownForGhost();
   return `<section class="s-card"><h3>👁 ${SKILL} <small>게임 중 1회</small></h3>
       ${known.length ? matesLine(known, '🔪') : ''}${body}</section>
-    ${doneBtn('nightDone', A.nd, true, '완료')}`;
+    <section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>
+    ${doneBtn('nightDone', A.nd, true, '확인 완료')}`;
 }
 
 /* =====================================================================
@@ -1883,6 +1929,7 @@ async function onAction(a, el) {
     const m = S.meta; if (!m) return; const d = m.day; const alive = isAlive(App.pid); const sc = mySec();
     const W = o => DB.update(roomPath(`act/d${d}/${App.pid}`), o);
     if (a === 'drawer') { App.drawer = !App.drawer; return rerender(); }
+    if (a === 'recnom') { const v = +el.dataset.v; App.recOpen = App.recOpen === v ? null : v; return rerender(); }
     if (a === 'ok' && m.phase === 'role') return DB.update(roomPath(`act/d0/${App.pid}`), { ok: true });
     if (a === 'sidesel') { App.sideSel = el.dataset.v; return rerender(); }
     if (a === 'sidego') { if (!App.sideSel || alive || sideOf(App.pid)) return; return DB.update(roomPath('choice'), { [App.pid]: App.sideSel }); }
@@ -1903,7 +1950,6 @@ async function onAction(a, el) {
       if (alive) {
         if (a === 'nact') { if (d === 1 && (sc.role === 'doctor' || sc.role === 'mafia')) return; if (sc.role === 'doctor' && id === sc.lastProtect) return; return W({ n: A.n === id ? null : id }); }
         if (a === 'pchk') { let ns = arr(A.ns); if (ns.includes(id)) ns = ns.filter(x => x !== id); else { if (ns.length >= ST().pk) { if (ST().pk === 1) ns = []; else return; } ns = [...ns, id]; } return W({ ns }); }
-        if (a === 'sus') return W({ s: A.s === id ? null : id });
         if (a === 'nightDone') return W({ nd: true });
       } else {
         if (!sideOf(App.pid)) return;

@@ -141,7 +141,14 @@ button.chip{box-shadow:0 0 0 4px var(--lamp)}
 .stats b{display:block;font-family:var(--fd);font-weight:400;font-size:132px;line-height:1.05}
 .stats span{font-size:38px;font-weight:800;color:var(--muted)}
 .stats .m b{color:var(--blood)}
-.sus{margin-top:26px;font-size:38px;font-weight:700;color:var(--muted)}
+.recmock{background:var(--card);border-radius:36px;padding:36px 44px;box-shadow:0 10px 0 var(--line)}
+.rm-h{display:flex;justify-content:space-between;font-size:52px;font-weight:800;margin-bottom:18px}
+.rm-h span{color:var(--blood);font-size:44px}
+.rm-l{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.rm-l em{font-style:normal;font-weight:800;font-size:40px;width:110px}
+.rm-l em.k{color:#FF7A90} .rm-l em.s{color:#8FB8FF}
+.rm-l span{background:var(--card2);border-radius:14px;padding:6px 18px;font-family:var(--fd);font-size:40px}
+.rm-n{margin-top:22px;font-size:32px;font-weight:700;color:var(--muted)}
 
 /* 추리 */
 .deduce{display:flex;align-items:center;gap:20px}
@@ -328,7 +335,7 @@ tr.prac td:first-child{color:var(--muted)}
     <div class="points">
       <div class="pt f"><i>1</i><div>능력은 없지만 표가 무기</div></div>
       <div class="pt f"><i>2</i><div>대화로 마피아를 찾아내요</div></div>
-      <div class="pt f"><i>3</i><div>밤에는 모두 ‘의심 1명’을 몰래 골라요<small>모두 휴대폰을 만지니까 누가 능력자인지 티가 안 나요</small></div></div>
+      <div class="pt f"><i>3</i><div>밤에는 모두 📜 재판 기록을 봐요<small>모두 휴대폰을 보니까 누가 능력자인지 티가 안 나요</small></div></div>
     </div>
   </div>
 </section>
@@ -415,9 +422,24 @@ tr.prac td:first-child{color:var(--muted)}
       <div class="nact f"><div class="em">🔪</div><div><b>마피아</b><span>암살할 1명</span></div></div>
       <div class="nact f"><div class="em">🚓</div><div><b>경찰</b><span>조사할 1명</span></div></div>
       <div class="nact f" data-if="doctor"><div class="em">💉</div><div><b>의사</b><span>지킬 1명</span></div></div>
-      <div class="nact f"><div class="em">🙂</div><div><b>모두</b><span>가장 의심 가는 1명</span></div></div>
+      <div class="nact f"><div class="em">📜</div><div><b>모두</b><span>오늘의 재판 기록 보기</span></div></div>
     </div>
     <p class="bar f">🌙 첫날 밤: 마피아끼리 서로 확인 · 암살 없음</p>
+  </div>
+</section>
+
+<!-- 13-2 재판 기록 -->
+<section class="slide" data-sky="night">
+  <p class="kicker">📜 재판 기록</p>
+  <h2>누가 어떻게 투표했는지 공개!</h2>
+  <div class="body">
+    <div class="recmock f">
+      <div class="rm-h"><b>3번 서준</b><span>처형 · 14 : 6</span></div>
+      <div class="rm-l"><em class="k">처형</em><span>1</span><span>2</span><span>4</span><span>7</span><span>9</span><span>10</span><span>11</span><span>13</span><span>…</span></div>
+      <div class="rm-l"><em class="s">살림</em><span>5</span><span>8</span><span>12</span><span>19</span><span>22</span><span>24</span></div>
+      <div class="rm-n">▼ 후보 지명 기록 — 누가 누구를 찍었는지도 볼 수 있어요</div>
+    </div>
+    <p class="bar f">정체는 여전히 비밀 · <span class="hl">기록 + 남은 마피아 수</span>로 추리해요</p>
   </div>
 </section>
 
@@ -432,7 +454,6 @@ tr.prac td:first-child{color:var(--muted)}
         <div><b>19</b><span>살아 있는 사람</span></div>
         <div class="m"><b>4</b><span>남은 마피아</span></div>
       </div>
-      <p class="sus">🤔 의심 TOP 3 · 7번 예준 5표 · 9번 서연 3표 · 2번 지아 3표</p>
     </div>
   </div>
 </section>
@@ -450,6 +471,7 @@ tr.prac td:first-child{color:var(--muted)}
       <div class="card f"><span>오늘 아침</span><b>4</b><em>남은 마피아</em></div>
     </div>
     <p class="answer f">서준은… <span class="maf">🔪 마피아!</span></p>
+    <p class="note f">그럼 어제 서준을 끝까지 <b>‘살림’</b>한 사람은 누구였지? 📜</p>
   </div>
 </section>
 
@@ -475,7 +497,7 @@ tr.prac td:first-child{color:var(--muted)}
     <div class="gl">
       <div class="nact f"><div class="em">📵</div><div><b>밀담에는 참여</b><span>본 것을 말해도, 숨겨도, 거짓말해도 OK</span></div></div>
       <div class="nact f"><div class="em">💤</div><div><b>광장 재판은 엎드리기</b><span>말하기 · 투표 X</span></div></div>
-      <div class="nact f"><div class="em">👁</div><div><b>영혼 투시는 단 한 번</b><span>밤에 1명의 진짜 직업 보기</span></div></div>
+      <div class="nact f"><div class="em">👁</div><div><b>영혼 투시는 단 한 번</b><span>밤에 1명이 직업이 있는지 보기 · 있음 = 마피아·경찰·의사 / 없음 = 시민</span></div></div>
     </div>
   </div>
 </section>
@@ -497,7 +519,7 @@ tr.prac td:first-child{color:var(--muted)}
         <li>동맹 맺고 배신하기</li>
       </ul></div>
     </div>
-    <p class="note">게임 속 일은 <b>게임 속에서 끝!</b> 🤝</p>
+    <p class="note">투표 기록도, 의심과 배신도 <b>게임 속에서 끝!</b> 🤝</p>
   </div>
 </section>
 
@@ -526,7 +548,7 @@ tr.prac td:first-child{color:var(--muted)}
   <h2 style="font-size:72px">인원별 직업 구성</h2>
   <div class="body" style="justify-content:flex-start;margin-top:24px">
     <div class="tables" id="tables"></div>
-    <p class="note" style="font-size:28px">3~9명은 연습·테스트용 · 인원마다 시뮬레이션으로 시민 승률이 50%에 가깝게 맞춘 조합</p>
+    <p class="note" style="font-size:28px">의사는 항상 1명 · 3~9명은 연습·테스트용 · 처음 하는 판과 익숙한 판의 중간이 시민 승률 50%가 되게 맞춘 조합</p>
   </div>
 </section>
 
@@ -553,7 +575,7 @@ tr.prac td:first-child{color:var(--muted)}
 
 <script>
 // 게임(index.html)과 같은 인원별 구성 [마피아, 경찰, 의사]
-const COMP = {3:[1,1,0],4:[1,1,0],5:[1,1,1],6:[2,1,1],7:[2,1,1],8:[2,1,1],9:[3,2,1],10:[3,2,1],11:[3,1,3],12:[3,1,2],13:[3,1,2],14:[4,2,2],15:[4,2,2],16:[5,3,2],17:[4,2,2],18:[5,3,2],19:[5,2,3],20:[5,2,3],21:[5,2,3],22:[5,2,3],23:[6,3,3],24:[6,3,3],25:[6,3,3],26:[6,3,2],27:[6,3,2],28:[6,3,2],29:[7,4,3],30:[7,3,4]};
+const COMP = {3:[1,1,0],4:[1,1,0],5:[1,1,1],6:[2,2,1],7:[2,2,1],8:[3,3,1],9:[2,1,1],10:[3,2,1],11:[3,2,1],12:[3,2,1],13:[4,3,1],14:[4,3,1],15:[5,4,1],16:[5,4,1],17:[5,4,1],18:[5,4,1],19:[5,3,1],20:[5,3,1],21:[6,4,1],22:[6,4,1],23:[6,4,1],24:[6,4,1],25:[6,3,1],26:[6,3,1],27:[7,4,1],28:[7,4,1],29:[7,4,1],30:[7,4,1]};
 const MIN = 3, MAX = 30;
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
