@@ -29,6 +29,8 @@ body.day  {--bg:var(--day); --fg:var(--ink);--card:#fff;    --card2:#E4F2F8;--li
 body.dusk {--bg:var(--dusk);--fg:#2B1D2E;   --card:#FFF6EE; --card2:#FBE1CE;--line:rgba(43,29,46,.15);--muted:#7B5856;--hi:#FFE08A}
 body.dawn {--bg:var(--dawn);--fg:#2B2340;   --card:#FFFDF8; --card2:#F7E9D6;--line:rgba(43,35,64,.14);--muted:#76657A;--hi:var(--lamp)}
 body.night{--bg:var(--night);--fg:#EEF0FF;  --card:#2B3172; --card2:#252B66;--line:rgba(238,240,255,.15);--muted:#A9AFDD;--hi:var(--lamp)}
+/* 광장(재판): 해 질 녘 광장, 눈부시지 않게 어두운 카드 */
+body.plaza{--bg:#4A3352;--fg:#FFF3E8;   --card:#3A2944; --card2:#4B3858;--line:rgba(255,243,232,.16);--muted:#E2C2B2;--hi:#FFD27A}
 
 /* 하늘: 해와 달 */
 #sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -46,6 +48,18 @@ body.night #orb{background:#F4F0DC;box-shadow:inset -28px -14px 0 0 #D9D3B8,0 0 
 body.tv #orb{width:34vh;left:50%;right:auto;top:-19vh;bottom:auto;transform:translateX(-50%)}
 body.tv.dusk #orb,body.tv.dawn #orb{top:-25vh;bottom:auto;right:auto}
 #app{position:relative;z-index:1}
+/* 단계별 배경 그림 */
+#sky{transition:background 1.2s}
+body.day #sky{background:linear-gradient(#8FCBEA 0%,#C6E7F4 55%,#E3F3E2 100%)}
+body.plaza #sky{background:linear-gradient(#2F2348 0%,#6B4466 45%,#C77A5E 100%)}
+body.dawn #sky{background:linear-gradient(#F6C9B4 0%,#FCE3C9 55%,#FBEBD8 100%)}
+body.night #sky{background:linear-gradient(#141838 0%,#1E2350 60%,#262C5E 100%)}
+.scn{position:absolute;left:0;right:0;bottom:0;width:100%;height:36vh;opacity:0;transition:opacity 1.2s}
+body.tv .scn{height:21vh}
+body.day .s-day,body.plaza .s-plaza,body.dawn .s-dawn,body.night .s-night,body.dusk .s-plaza{opacity:1}
+body.plaza #orb{background:#FF9A6A;box-shadow:0 0 90px 30px rgba(255,140,90,.35);top:auto;bottom:22vh;right:12vw;width:min(22vw,180px)}
+body.tv.plaza #orb{bottom:20vh;top:auto;left:auto;right:8vw;transform:none;width:16vh}
+body.plaza .tok:not(.dead) b{color:var(--hi)}
 
 button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
 button:disabled{opacity:.45;cursor:default}
@@ -294,6 +308,20 @@ body.night .tok.t-mafia{background:#6A2C4F}
 .rec-t{border:0;background:none;color:var(--muted);font:700 14px var(--fb,inherit);text-align:left;padding:4px 0;cursor:pointer}
 .rec-n{display:grid;gap:2px}
 .rsub{font-weight:800;font-size:13px;margin-top:6px}
+/* 학생 머리글: 이름 · 단계 · 수첩 */
+.bar{grid-template-columns:1fr auto auto!important}
+.bar .ph{font-size:14px}
+.bar .nb{width:44px;height:44px;border-radius:14px;background:var(--card);font-size:22px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+/* 선생님 화면: 마을을 크게, 아래 버튼도 크게 */
+.T-main{grid-template-columns:minmax(0,.85fr) minmax(0,1.25fr)}
+.T-village{align-content:center}
+.T-ctrl button{font-size:min(1.05vw,1.9vh);padding:1vh 1vw;border-radius:12px}
+.T-ctrl button.primary.next.wait{background:var(--card);color:var(--muted);box-shadow:none}
+.set{font-size:min(1vw,1.8vh)} .set summary{font-size:min(1.1vw,1.9vh)}
+.vgrid.big{grid-template-columns:repeat(auto-fill,minmax(min(19vw,320px),1fr))}
+.vgrid.big .vcard{padding:1.6vh 1.2vw;border-radius:22px}
+.vgrid.big .vc-n{font-size:min(1.2vw,2vh)}
+.T-stage .sub small{font-size:.75em;font-weight:600}
 /* ---- 기본형 v3 ---- */
 #net{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--blood);color:#fff;font-weight:800;text-align:center;padding:8px 12px;transform:translateY(-100%);transition:transform .3s}
 #net.show{transform:none}
@@ -410,7 +438,43 @@ body.night .vcard.sv .vc-stamp{color:var(--ghost)}
 </style>
 </head>
 <body class="night">
-<div id="sky"><div id="orb"></div></div>
+<div id="sky"><div id="orb"></div>
+<svg class="scn s-day" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M0 170 C200 110 360 120 520 160 C700 205 860 120 1200 140 V320 H0Z" fill="#A9DA8C"/>
+  <path d="M0 220 C180 170 420 190 600 225 C800 262 980 190 1200 205 V320 H0Z" fill="#86C66E"/>
+  <path d="M0 270 C260 238 520 262 760 280 C940 292 1080 262 1200 266 V320 H0Z" fill="#68AF5A"/>
+  <g fill="#4E8F45"><circle cx="150" cy="150" r="26"/><circle cx="178" cy="160" r="20"/><rect x="158" y="160" width="8" height="30" fill="#7A5A3A"/>
+  <circle cx="1010" cy="135" r="30"/><circle cx="1042" cy="146" r="22"/><rect x="1020" y="150" width="9" height="34" fill="#7A5A3A"/></g>
+  <g fill="#fff" opacity=".9"><circle cx="90" cy="290" r="4"/><circle cx="300" cy="280" r="3"/><circle cx="470" cy="298" r="4"/><circle cx="690" cy="288" r="3"/><circle cx="880" cy="300" r="4"/><circle cx="1120" cy="286" r="3"/></g>
+  <g fill="#FFD25E"><circle cx="210" cy="300" r="3"/><circle cx="560" cy="284" r="3"/><circle cx="790" cy="304" r="3"/><circle cx="1000" cy="296" r="3"/></g>
+</svg>
+<svg class="scn s-plaza" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <g fill="#3A2540"><rect x="80" y="150" width="120" height="110"/><path d="M70 152 L140 110 L210 152Z"/><rect x="990" y="140" width="130" height="120"/><path d="M980 142 L1055 98 L1130 142Z"/></g>
+  <g fill="#FFD27A" opacity=".85"><rect x="110" y="180" width="16" height="20" rx="2"/><rect x="150" y="180" width="16" height="20" rx="2"/><rect x="1020" y="170" width="16" height="20" rx="2"/><rect x="1070" y="170" width="16" height="20" rx="2"/></g>
+  <g fill="#43294A"><path d="M420 120 L600 62 L780 120Z"/><rect x="430" y="120" width="340" height="16"/>
+  <rect x="448" y="136" width="22" height="104"/><rect x="510" y="136" width="22" height="104"/><rect x="572" y="136" width="22" height="104"/><rect x="606" y="136" width="22" height="104"/><rect x="668" y="136" width="22" height="104"/><rect x="730" y="136" width="22" height="104"/>
+  <rect x="420" y="240" width="360" height="12"/><rect x="400" y="252" width="400" height="12"/></g>
+  <path d="M0 262 H1200 V320 H0Z" fill="#5A3A55"/>
+  <g stroke="#6E4A66" stroke-width="3"><path d="M600 262 L200 320"/><path d="M600 262 L420 320"/><path d="M600 262 L600 320"/><path d="M600 262 L780 320"/><path d="M600 262 L1000 320"/><path d="M0 290 H1200"/></g>
+  <g><rect x="300" y="190" width="6" height="72" fill="#2A1A30"/><circle cx="303" cy="186" r="11" fill="#FFD27A"/><circle cx="303" cy="186" r="26" fill="#FFD27A" opacity=".18"/>
+  <rect x="894" y="190" width="6" height="72" fill="#2A1A30"/><circle cx="897" cy="186" r="11" fill="#FFD27A"/><circle cx="897" cy="186" r="26" fill="#FFD27A" opacity=".18"/></g>
+</svg>
+<svg class="scn s-dawn" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M0 190 C220 140 420 150 620 185 C820 220 1000 150 1200 168 V320 H0Z" fill="#EDC2AE"/>
+  <path d="M0 240 C240 205 480 222 700 246 C900 266 1060 226 1200 232 V320 H0Z" fill="#DDA996"/>
+  <g fill="#B88A7E"><rect x="160" y="210" width="70" height="50"/><path d="M152 212 L195 184 L238 212Z"/><rect x="930" y="200" width="80" height="56"/><path d="M922 202 L970 172 L1018 202Z"/></g>
+  <g fill="#FFE7B8"><rect x="180" y="226" width="12" height="14"/><rect x="950" y="218" width="12" height="14"/></g>
+</svg>
+<svg class="scn s-night" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M0 220 C260 180 520 196 760 214 C960 230 1080 204 1200 208 V320 H0Z" fill="#191D44"/>
+  <g fill="#12153A">
+    <path d="M40 320V240l60-42 60 42v80z"/><path d="M180 320V214h110v106z"/><path d="M172 218l63-50 63 50z"/><path d="M320 320V250l50-36 50 36v70z"/>
+    <path d="M820 320V232l70-50 70 50v88z"/><path d="M980 320V206h130v114z"/><path d="M970 210l75-56 75 56z"/><path d="M1130 320V246l45-32 45 32v74z"/>
+    <rect x="0" y="300" width="1200" height="20"/></g>
+  <g fill="#F4C24D" opacity=".9"><rect x="88" y="258" width="16" height="20" rx="2"/><rect x="205" y="236" width="16" height="20" rx="2"/><rect x="250" y="236" width="16" height="20" rx="2"/>
+  <rect x="872" y="252" width="18" height="22" rx="2"/><rect x="1010" y="230" width="18" height="22" rx="2"/><rect x="1060" y="230" width="18" height="22" rx="2"/></g>
+</svg>
+</div>
 <main id="app"></main>
 <div id="overlay"></div>
 <div id="demobar"></div>
@@ -551,12 +615,12 @@ const PH = {
   lobby:    { name: '입장',        icon: '🏠', sky: 'night' },
   role:     { name: '직업 확인',   icon: '📱', sky: 'night', phone: true },
   talk:     { name: '밀담',        icon: '📵', sky: 'day' },
-  court:    { name: '광장 토론',   icon: '🏛️', sky: 'day' },
-  nominate: { name: '후보 지명',   icon: '🗳️', sky: 'dusk', phone: true },
-  runoff:   { name: '결선 투표',   icon: '🔁', sky: 'dusk', phone: true },
-  defense:  { name: '최후의 발언', icon: '🎤', sky: 'dusk' },
-  judge:    { name: '최종 판정',   icon: '⚖️', sky: 'dusk', phone: true },
-  verdict:  { name: '판결',        icon: '🔨', sky: 'dusk' },
+  court:    { name: '광장 토론',   icon: '🏛️', sky: 'plaza' },
+  nominate: { name: '후보 지명',   icon: '🗳️', sky: 'plaza', phone: true },
+  runoff:   { name: '결선 투표',   icon: '🔁', sky: 'plaza', phone: true },
+  defense:  { name: '최후의 발언', icon: '🎤', sky: 'plaza' },
+  judge:    { name: '최종 판정',   icon: '⚖️', sky: 'plaza', phone: true },
+  verdict:  { name: '판결',        icon: '🔨', sky: 'plaza' },
   night:    { name: '밤',          icon: '🌙', sky: 'night', phone: true },
   morning:  { name: '아침',        icon: '☀️', sky: 'dawn', phone: true },
   end:      { name: '게임 끝',     icon: '🏁', sky: 'night' }
@@ -741,7 +805,10 @@ function resolveNominateUpdates(d) {
     tally[v] = (tally[v] || 0) + 1;
   }
   const K = Math.max(1, alive.filter(id => roleOf(id) === 'mafia').length);
-  const pk = topWithTie(tally, K);
+  // 2표 이상 받은 사람 중 득표 상위 K명. K번째와 표가 같으면 모두 후보 (결선 없음)
+  const pool = Object.keys(tally).filter(id => tally[id] >= 2).sort((a, b) => tally[b] - tally[a] || num(a) - num(b));
+  const thr = pool.length > K ? tally[pool[K - 1]] : 0;
+  const pk = { fixed: pool.filter(id => tally[id] >= thr), tied: [], slots: 0 };
   up['pub/nom'] = { d, K, cands: pk.fixed, tied: pk.tied.length ? pk.tied : null, slots: pk.slots, voters, round: 1,
     tally: Object.keys(tally).sort((a, b) => tally[b] - tally[a] || num(a) - num(b)).slice(0, Math.max(8, K + 3)).map(id => ({ id, c: tally[id] })) };
   return { up, cands: pk.fixed, tied: pk.tied };
@@ -1132,7 +1199,7 @@ async function advance() {
       case 'court': up = Object.assign(botNominateUpdates(d), phaseUp('nominate', d)); break;
       case 'nominate': {
         const r = resolveNominateUpdates(d);
-        up = r.tied.length ? Object.assign(r.up, botRunoffUpdates(d, r.tied), phaseUp('runoff', d)) : toDefense(d, r.cands, r.up);
+        up = toDefense(d, r.cands, r.up);
         break;
       }
       case 'runoff': {
@@ -1183,7 +1250,22 @@ function nextLabel() {
   const nx = { role: '밀담 시작', talk: '광장 토론으로', court: '후보 지명 투표로', runoff: '후보 확정', judge: '판결 공개', morning: '밀담 시작' }[ph];
   return nx || '다음 단계';
 }
-function goNext() { return advance(); }
+// 밤에 능력을 써야 하는 사람(마피아·경찰·의사)이 아직 안 골랐는지
+function nightPending() {
+  const m = S.meta; if (!m || m.phase !== 'night') return 0;
+  const d = m.day, A = actDay(d); let n = 0;
+  for (const id of aliveIds()) {
+    const r = roleOf(id), a = A[id] || {};
+    if (r === 'mafia' && d > 1 && !a.n) n++;
+    else if (r === 'police' && !arr(a.ns).length) n++;
+    else if (r === 'doctor' && d > 1 && !a.n) n++;
+  }
+  return n;
+}
+function goNext() {
+  if (nightPending() && !confirm('아직 밤 능력을 쓰지 않은 사람이 있어요.\n(휴대폰이 꺼진 경우 등) 그래도 아침으로 넘길까요?')) return;
+  return advance();
+}
 // 유령의 편 고르기·영혼 투시 결과를 진행 기기가 처리
 function hostSideEffects() {
   const m = S.meta; if (!m || m.phase === 'lobby' || m.phase === 'end') return null;
@@ -1553,7 +1635,7 @@ function stageHTML() {
   if (ph === 'role') return `<p class="lead">직업을 확인하세요</p>${prog(sortedIds().filter(id => actDay(0)[id] && actDay(0)[id].ok).length, nAll, '명 확인')}`;
   if (ph === 'talk') return `<p class="lead">휴대폰을 넣고 일어나세요</p>${cluesHTML(d)}`;
   if (ph === 'court') return `<p class="lead">자리로 돌아오세요</p><p class="sub">💤 유령은 엎드려요</p>${cluesHTML(d)}`;
-  if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명</b>이 후보</p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
+  if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명</b>이 후보 <small>(2표 이상 · 동점이면 모두)</small></p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
   if (ph === 'runoff') { const nom = nomNow();
     return `<p class="sub">${nom.round > 1 ? `<b>${nom.round}차</b> · ` : ''}동점자 중 <b>${nom.slots}명</b> 선택</p>
       <div class="chiprow">${arr(nom.tied).map(id => `<span class="cchip tie">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('rvd'), nAlive, '명 제출')}`; }
@@ -1561,7 +1643,8 @@ function stageHTML() {
   if (ph === 'judge') return `<p class="sub">처형 <b>${needKill(nAlive - 1)}표</b> 이상이면 처형</p>
       <div class="chiprow">${candsNow().map(id => `<span class="cchip">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('jd'), nAlive, '명 제출')}`;
   if (ph === 'verdict') return verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true);
-  if (ph === 'night') return `<p class="lead">고개를 숙이세요</p>${d === 1 ? '<p class="sub">첫날 밤 · 암살 없음</p>' : ''}${prog(sortedIds().filter(id => A[id] && A[id].nd).length, nAll, '명 완료')}`;
+  if (ph === 'night') return `<p class="lead">고개를 숙이세요</p>${d === 1 ? '<p class="sub">첫날 밤 · 암살 없음</p>' : ''}${prog(sortedIds().filter(id => A[id] && A[id].nd).length, nAll, '명 완료')}
+      <p class="sub">${nightPending() ? '⏳ 능력 사용을 기다리는 중' : '✓ 능력 사용 끝'}</p>`;
   if (ph === 'morning') return newsHTML(S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null);
   if (ph === 'end') return endHTML(S.pub && S.pub.end);
   return '';
@@ -1587,7 +1670,7 @@ function gameHTML() {
       ${ph === 'end' ? '' : '<button data-a="abort">중단</button>'}
       <span class="grow"></span>
       ${ph === 'end' ? '<button class="primary" data-a="reset">새 게임</button>'
-        : `${ready ? '<span class="readyhint ok">✓ 모두 제출</span>' : ''}<button class="primary next ${ready ? 'ready' : ''}" data-a="next">▶ ${nextLabel()}</button>`}
+        : `${ready ? '<span class="readyhint ok">✓ 모두 제출</span>' : ''}<button class="primary next ${ready ? 'ready' : ''} ${nightPending() ? 'wait' : ''}" data-a="next">${nightPending() ? '⏳' : '▶'} ${nextLabel()}</button>`}
     </footer></div>`;
 }
 
@@ -1611,7 +1694,7 @@ const SLIDES = () => {
       <div><b>☀️ 아침</b><small>희생자 · 생존 인원 · 남은 마피아 수</small></div></div>`,
     `<h2>🏛️ 광장 재판</h2><div class="flow" style="grid-template-columns:repeat(4,1fr)">
       <div><b>① 토론</b><small>자리에서 지목하고 변론</small></div>
-      <div><b>② 후보 지명</b><small>1명씩 투표, 상위 ‘남은 마피아 수’명이 후보. 경계에서 동점이면 동점자끼리 결선</small></div>
+      <div><b>② 후보 지명</b><small>1명씩 투표, 2표 이상 받은 사람 중 상위 ‘남은 마피아 수’명이 후보. 마지막 자리가 동점이면 모두 후보</small></div>
       <div><b>③ 최후의 발언</b><small>후보가 한 명씩 일어나 변론</small></div>
       <div><b>④ 최종 판정</b><small>후보마다 처형/살림, 과반수면 처형</small></div></div>
      <p>처형된 사람의 정체는 공개하지 않아요. 대신 <b>밤에 재판 기록</b>(누가 누구를 지명했고, 누가 처형·살림을 눌렀는지)이 모두의 휴대폰에 공개돼요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
@@ -1736,9 +1819,9 @@ function renderStudent() {
   const dead = !isAlive(App.pid);
   $('#app').innerHTML = `<div class="S">
     <header class="bar"><div class="me"><b>${me().num || '·'}</b>${esc(me().name)}${dead ? ' 👻' : ''}</div>
-      <div class="ph">${ph !== 'lobby' && ph !== 'end' ? m.day + '일차<br>' : ''}${PH[ph].icon} ${PH[ph].name}</div></header>
+      <div class="ph">${ph !== 'lobby' && ph !== 'end' ? m.day + '일차 · ' : ''}${PH[ph].icon} ${PH[ph].name}</div>
+      ${ph !== 'lobby' ? '<button class="nb" data-a="drawer" aria-label="직업과 수첩 보기">📒</button>' : ''}</header>
     ${sBody()}
-    ${ph !== 'lobby' ? '<button class="btn ghosty big sbtn" data-a="drawer">📒 직업 · 수첩</button>' : ''}
   </div>
   <div class="drawer ${App.drawer ? 'open' : ''}">${App.drawer ? drawerHTML() : ''}</div>`;
   window.scrollTo(0, y);
@@ -1775,7 +1858,7 @@ function sBody() {
   if (ph === 'court') return pocket('🏛️', '광장 토론', '');
   if (ph === 'nominate') {
     const A = myAct(d); const others = aliveIds().filter(x => x !== App.pid);
-    return `<section class="s-card"><h3>🗳️ 처형 후보 지명 <small>상위 ${status().mafia}명</small></h3>
+    return `<section class="s-card"><h3>🗳️ 처형 후보 지명 <small>2표↑ · 상위 ${status().mafia}명</small></h3>
         <div class="chips">${others.map(id => chip(id, A.nv === id, 'nv', '', teamOf(App.pid) === 'mafia' && arr(sc.mates).includes(id) ? 'mate' : '')).join('')}<button class="chip wide ${A.nv === 'skip' ? 'on' : ''}" data-a="nv" data-id="skip">기권</button></div></section>
       ${doneBtn('nvDone', A.nvd, A.nv, A.nv ? '제출' : '1명 고르기')}`;
   }
