@@ -1134,7 +1134,7 @@ const MafiaStats = {
       '처형', '처형된 마피아', '처형된 시민편', '암살', '의사 구조', '경찰이 찾은 마피아', '결선 투표', '판정에서 살아남은 후보', '연습판',
       '동점으로 빠진 후보', '후보 없던 날', '되돌리기', '규칙 버전']];
     const PR = [['게임ID', '날짜', '인원', '연습판', '번호', '이름', '직업', '최종 편', '결과', '생존', '사망 일차', '사망 원인',
-      '투표 참여율', '지명 적중률', '판정 정확도', '받은 지명표', '후보가 된 횟수', '판정에서 살아남음',
+      '투표 참여율', '지명 적중률(2일차~)', '판정 정확도(2일차~)', '받은 지명표', '후보가 된 횟수', '판정에서 살아남음',
       '조사 수', '찾은 마피아', '보호 수', '구조 수', '암살 시도', '암살 성공', '유령 편', '영혼 투시 결과', '수상']];
     const VT = [['게임ID', '일차', '단계', '투표한 학생', '투표자 직업', '대상', '대상 직업', '값', '연습판']];
     const agg = {}, byN = {}, byRole = {};
@@ -1161,7 +1161,7 @@ const MafiaStats = {
         // 광장 재판 (재판·밤 기록이 있는 날만 셈: 중간에 중단된 단계는 빼기)
         if (D.court) for (const id of ids) if (atCourt(id, d) && st[id]) {
           st[id].opp++; const v = nv[id];
-          if (v != null) { st[id].sub++; if (v !== 'skip' && PL[v]) { st[id].nPick++; st[v] && st[v].recv++; if (T(v) === 'mafia') st[id].nMaf++; } V(d, '후보 지명', id, v === 'skip' ? null : v, v === 'skip' ? '기권' : ''); }
+          if (v != null) { st[id].sub++; if (v !== 'skip' && PL[v]) { st[v] && st[v].recv++; if (d >= 2) { st[id].nPick++; if (T(v) === 'mafia') st[id].nMaf++; } } V(d, '후보 지명', id, v === 'skip' ? null : v, v === 'skip' ? '기권' : ''); }
         }
         L(D.runs).forEach((ru, i) => { gs.runs++; const b = (ru && ru.b) || {}; for (const id in b) if (PL[id]) V(d, `결선 ${i + 1}차`, id, b[id] === 'skip' ? null : b[id], b[id] === 'skip' ? '기권' : ''); });
         for (const c of cands) if (st[c]) st[c].cand++;
@@ -1170,7 +1170,7 @@ const MafiaStats = {
         if (D.court) for (const id of ids) if (atCourt(id, d) && st[id]) for (const c of cands) {
           if (c === id) continue; st[id].jOpp++; st[id].opp++;
           const val = j[id] && j[id][c]; if (!val) continue;
-          st[id].jSub++; st[id].sub++; if ((T(c) === 'mafia') === (val === 'k')) st[id].jRight++;
+          st[id].sub++; if (d >= 2) { st[id].jSub++; if ((T(c) === 'mafia') === (val === 'k')) st[id].jRight++; }
           V(d, '최종 판정', id, c, val === 'k' ? '처형' : '살림');
         }
         // 밤
@@ -1217,7 +1217,7 @@ const MafiaStats = {
       }
     }
     const ST2 = [['이름', '판 수', '승', '승률', '마피아', '경찰', '의사', '시민', '시민 편 승률', '마피아 승률', '끝까지 생존율', '처형당함', '암살당함',
-      '투표 참여율', '지명 적중률', '판정 정확도', '수상', '마지막 참여']];
+      '투표 참여율', '지명 적중률(2일차~)', '판정 정확도(2일차~)', '수상', '마지막 참여']];
     for (const name of Object.keys(agg).sort((a, b) => agg[b].g - agg[a].g || a.localeCompare(b, 'ko'))) {
       const a = agg[name];
       ST2.push([name, a.g, a.w, r3(div(a.w, a.g)), a.role.mafia, a.role.police, a.role.doctor, a.role.citizen, r3(div(a.cw, a.cg)), r3(div(a.mw, a.mg)),
@@ -1230,8 +1230,8 @@ const MafiaStats = {
     const HELP = [['항목', '뜻'],
       ['연습판', '10명 미만이거나 테스트 봇이 섞인 판. 학생별 누적·인원별·직업별 승률에서는 빠짐 (선생님이 중단한 판도 제외)'],
       ['투표 참여율', '후보 지명·최종 판정 표를 낼 수 있었던 횟수 중 실제로 낸 비율 (안 내면 기권 처리됨)'],
-      ['지명 적중률', '시민 편(마피아가 아닌 학생)이 후보 지명 투표에서 실제 마피아를 고른 비율'],
-      ['판정 정확도', '시민 편이 최종 판정에서 마피아는 처형, 시민은 살림을 고른 비율'],
+      ['지명 적중률(2일차~)', '시민 편(마피아가 아닌 학생)이 후보 지명 투표에서 실제 마피아를 고른 비율. 1일차는 정보가 없어 운이라 2일차부터 셈'],
+      ['판정 정확도(2일차~)', '시민 편이 최종 판정에서 마피아는 처형, 시민은 살림을 고른 비율 (2일차부터)'],
       ['받은 지명표', '그 판에서 다른 학생들에게 후보 지명 표를 받은 총 개수'],
       ['판정에서 살아남음', '후보가 됐지만 최종 판정에서 과반을 넘기지 않아 살아남은 횟수'],
       ['최종 편 / 유령 편', '살아 있으면 직업의 편, 죽은 뒤에는 유령으로서의 편 (처형된 시민은 직접 고름)'],
@@ -1997,10 +1997,10 @@ const SLIDES = () => {
   return [
     `<h2>🌙 마피아 마을에 오신 걸 환영합니다</h2><p class="big">이 교실 안에 마피아 ${c.mafia}명이 숨어 있어요.</p>
      <div class="two"><div><b>🙂 시민 편</b><p>${citWin()}</p></div><div><b>🔪 마피아 편</b><p>${mafWin()}</p></div></div>
-     <p>첫날은 마피아끼리도 서로를 몰라요. <b>첫날 밤</b>에 서로를 확인하고, <b>둘째 밤부터</b> 살아 있는 마피아 수만큼 암살해요!</p>`,
+     <p>첫날은 마피아끼리도 서로를 몰라요. <b>첫날 밤</b>에 서로를 확인하고, <b>둘째 밤부터</b> 살아 있는 마피아 수만큼 암살해요! 단, <b>동료와 같은 사람을 고르면</b> 그 사람 한 명만 암살돼요.</p>`,
     `<h2>이번 게임의 직업</h2><div class="rolegrid">
-      <div><b>🔪 마피아 ${c.mafia}명</b>첫날 밤에 서로를 확인. 둘째 밤부터 각자 1명씩 암살</div>
-      <div><b>🚓 경찰 ${c.police}명</b>밤마다 ${ST().pk}명씩 조사${c.police > 1 ? '. 결과는 경찰끼리 공유 (서로 누군지는 몰라요)' : ''}</div>
+      <div><b>🔪 마피아 ${c.mafia}명</b>첫날 밤에 서로를 확인. 둘째 밤부터 각자 1명씩 암살 (동료와 겹치면 그만큼 줄어요)</div>
+      <div><b>🚓 경찰 ${c.police}명</b>밤마다 ${ST().pk}명씩 조사${c.police > 1 ? '. 결과는 경찰끼리 공유 (서로 누군지는 몰라요). 다른 경찰과 같은 사람을 고르면 조사가 그만큼 줄어요' : ''}</div>
       <div><b>💉 의사 ${c.doctor}명</b>둘째 밤부터 밤마다 1명을 암살에서 지킴 (나 자신도 가능)</div>
       <div><b>🙂 시민 ${cit}명</b>대화와 추리, 밤에는 재판 기록 확인</div></div>`,
     `<h2>하루는 이렇게 흘러가요</h2><div class="flow">
@@ -2280,7 +2280,7 @@ function aliveNight(d) {
   } else if (r === 'mafia') {
     const mates = arr(sc.mates); const picks = {};
     mates.forEach(x => { const t = actDay(d)[x] && actDay(d)[x].n; if (t && isAlive(x)) (picks[t] = picks[t] || []).push(x); });
-    roleSec = `<section class="s-card"><h3>🔪 암살 <small>1명 · 동료와 겹치지 않게</small></h3>
+    roleSec = `<section class="s-card"><h3>🔪 암살 <small>1명 · 동료와 겹치면 암살이 줄어요</small></h3>
       ${matesLine(mates, '🤝')}
       <div class="chips">${others.map(id => chip(id, A.n === id, 'nact', picks[id] ? `<i class="pk">${picks[id].map(num).join(',')}번</i>` : '', mates.includes(id) ? 'mate' : '')).join('')}</div></section>`;
   } else if (r === 'police') {
@@ -2289,7 +2289,7 @@ function aliveNight(d) {
     const pres = sc.pres || {};
     const tag = id => pres[id] ? (pres[id].m ? '<i class="pk pm">🚨 마피아</i>' : '<i class="pk pc">✅ 아님</i>') : tp.has(id) ? '<i class="pk tp">다른 경찰이 고름</i>' : '';
     roleSec = `${policeResults(pres)}
-      <section class="s-card"><h3>🚓 오늘 밤 조사 <small>${ns.length} / ${pk}명 선택</small></h3>
+      <section class="s-card"><h3>🚓 오늘 밤 조사 <small>${ns.length} / ${pk}명 선택${tp.size ? ' · 다른 경찰과 겹치면 줄어요' : ''}</small></h3>
       ${ns.length ? `<p class="pnow">🔍 <b>${ns.map(id => esc(who(id))).join(', ')}</b> 조사 → 결과는 아침에 나와요</p>` : '<p class="muted">조사할 사람을 고르세요</p>'}
       <div class="chips">${others.map(id => chip(id, ns.includes(id), 'pchk', tag(id))).join('')}</div></section>`;
   } else if (r === 'doctor' && d === 1) {

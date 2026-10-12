@@ -292,8 +292,9 @@ tr.prac td:first-child{color:var(--muted)}
     <div class="badge">🔪</div>
     <div class="points">
       <div class="pt f"><i>1</i><div>밤마다 한 명씩 암살<small>마피아 <span data-v="mafia"></span>명이면 하룻밤에 최대 <span data-v="mafia"></span>명</small></div></div>
-      <div class="pt f"><i>2</i><div>첫날 밤엔 서로 얼굴만 확인<small>첫날 낮에는 동료도 몰라요 · 암살은 둘째 밤부터</small></div></div>
-      <div class="pt f"><i>3</i><div>동료 마피아도 노릴 수 있어요</div></div>
+      <div class="pt f"><i>2</i><div>동료와 <span class="hl">같은 사람</span>을 고르면 그만큼 줄어요<small>둘이 같은 사람을 노리면 그날 밤 암살은 1명 · 동료가 고른 사람은 휴대폰에 번호로 표시돼요</small></div></div>
+      <div class="pt f"><i>3</i><div>첫날 밤엔 서로 얼굴만 확인<small>첫날 낮에는 동료도 몰라요 · 암살은 둘째 밤부터</small></div></div>
+      <div class="pt f"><i>4</i><div>동료 마피아도 노릴 수 있어요</div></div>
     </div>
   </div>
 </section>
@@ -307,7 +308,8 @@ tr.prac td:first-child{color:var(--muted)}
     <div class="points">
       <div class="pt f"><i>1</i><div>밤마다 한 명 조사<small>“마피아다” 또는 “아니다”</small></div></div>
       <div class="pt f"><i>2</i><div>결과는 경찰 모두에게 공유<small>경찰이 여러 명이면 함께 수사해요</small></div></div>
-      <div class="pt f"><i>3</i><div>누가 경찰인지는 서로 몰라요</div></div>
+      <div class="pt f"><i>3</i><div><span class="hl">같은 사람</span>을 고르면 그만큼 줄어요<small>다른 경찰과 겹치면 결과는 1명분 · 다른 경찰이 고른 사람은 휴대폰에 표시</small></div></div>
+      <div class="pt f"><i>4</i><div>누가 경찰인지는 서로 몰라요</div></div>
     </div>
   </div>
 </section>
@@ -419,8 +421,8 @@ tr.prac td:first-child{color:var(--muted)}
   <h2>모두 휴대폰을 꺼내요</h2>
   <div class="body">
     <div class="grid4">
-      <div class="nact f"><div class="em">🔪</div><div><b>마피아</b><span>암살할 1명</span></div></div>
-      <div class="nact f"><div class="em">🚓</div><div><b>경찰</b><span>조사할 1명</span></div></div>
+      <div class="nact f"><div class="em">🔪</div><div><b>마피아</b><span>암살할 1명 · 동료와 겹치면 줄어요</span></div></div>
+      <div class="nact f"><div class="em">🚓</div><div><b>경찰</b><span>조사할 1명 · 다른 경찰과 겹치면 줄어요</span></div></div>
       <div class="nact f" data-if="doctor"><div class="em">💉</div><div><b>의사</b><span>지킬 1명</span></div></div>
       <div class="nact f"><div class="em">📜</div><div><b>모두</b><span>오늘의 재판 기록 보기</span></div></div>
     </div>
@@ -496,7 +498,7 @@ tr.prac td:first-child{color:var(--muted)}
   <div class="body">
     <div class="gl">
       <div class="nact f"><div class="em">📵</div><div><b>자유 대화에는 참여</b><span>본 것을 말해도, 숨겨도, 거짓말해도 OK</span></div></div>
-      <div class="nact f"><div class="em">💤</div><div><b>광장 재판은 엎드리기</b><span>말하기 · 투표 X</span></div></div>
+      <div class="nact f"><div class="em">👀</div><div><b>광장 재판은 조용히 구경</b><span>말하기 · 투표 · 손짓 신호 X · 휴대폰에서 재판 기록은 볼 수 있음</span></div></div>
       <div class="nact f"><div class="em">👁</div><div><b>영혼 투시는 단 한 번</b><span>밤에 1명이 직업이 있는지 보기 · 있음 = 마피아·경찰·의사 / 없음 = 시민</span></div></div>
     </div>
   </div>
@@ -511,7 +513,7 @@ tr.prac td:first-child{color:var(--muted)}
       <div class="card no"><h3>🚫 안 돼요</h3><ul>
         <li>자유 대화·재판 중 휴대폰 꺼내기</li>
         <li>내 화면 보여 주기, 남의 화면 엿보기</li>
-        <li>엎드린 유령이 말하기</li>
+        <li>재판 중에 유령이 말하거나 신호 보내기</li>
       </ul></div>
       <div class="card ok"><h3>⭕ 괜찮아요</h3><ul>
         <li>거짓말과 연기</li>
