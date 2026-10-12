@@ -391,7 +391,15 @@ body.night .readyhint.ok{color:var(--ghost)}
 .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .vgrid.big{gap:1.6vh 1.2vw}
 .vcard{background:var(--card);border-radius:18px;padding:14px 16px;display:grid;gap:8px;position:relative;overflow:hidden;
-  animation:vin .5s ease both;animation-delay:calc(var(--i) * .9s - var(--off, 0s))}
+  animation:vin .5s ease both;animation-delay:calc(var(--i) * .15s - var(--off, 0s))}
+.vcard{--at:calc(1.6s + var(--i) * 3.2s - var(--off, 0s))}
+.vc-bar i{animation:grow 1.6s cubic-bezier(.4,0,.6,1) both;animation-delay:var(--at)}
+.vc-n{animation:vin .4s ease both;animation-delay:calc(var(--at) + 1.6s)}
+.vc-q{position:absolute;top:12px;right:14px;font-weight:800;color:var(--muted);animation:qout .3s ease both;animation-delay:calc(var(--at) + 1.6s)}
+.vcard.ex{animation:vin .5s ease both,redline .4s ease both;animation-delay:calc(var(--i) * .15s - var(--off, 0s)),calc(var(--at) + 2.2s)}
+@keyframes grow{from{width:0}to{width:var(--w)}}
+@keyframes qout{to{opacity:0;visibility:hidden}}
+@keyframes redline{from{box-shadow:none}to{box-shadow:inset 0 0 0 3px var(--blood)}}
 .vc-name{font-family:var(--fd);font-weight:400;font-size:24px;line-height:1.1;padding-right:64px}
 .vgrid.big .vc-name{font-size:min(2vw,3.4vh)}
 .vc-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--card2)}
@@ -399,10 +407,10 @@ body.night .readyhint.ok{color:var(--ghost)}
 .vc-bar .k{background:var(--blood)} .vc-bar .s{background:var(--cit)}
 .vc-n{display:flex;justify-content:space-between;font-weight:800;font-size:15px}
 .vc-stamp{position:absolute;top:10px;right:12px;font-family:var(--fd);font-size:22px;border:3px solid;border-radius:10px;padding:0 8px;transform:rotate(-8deg);
-  animation:stamp .35s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--i) * .9s + .6s - var(--off, 0s))}
+  animation:stamp .35s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--at) + 2.2s)}
 .vcard.ex .vc-stamp{color:var(--blood)} .vcard.sv .vc-stamp{color:#1E9E73}
 body.night .vcard.sv .vc-stamp{color:var(--ghost)}
-.vcard.ex{box-shadow:inset 0 0 0 3px var(--blood)}
+.vcard.ex{}
 .vd-note{margin-top:10px;font-size:.85em}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes stamp{from{opacity:0;transform:scale(2.2) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(-8deg)}}
@@ -434,7 +442,54 @@ body.night .vcard.sv .vc-stamp{color:var(--ghost)}
 .T-stage .mo-line{font-size:min(2.6vw,4.4vh)}
 .mo-line.kill{color:var(--blood)}
 .T-stage .mo{gap:1.6vh}
-@media (prefers-reduced-motion:reduce){.vcard,.vc-stamp{animation:none}}
+/* 컴퓨터에서 '애니메이션 효과'를 꺼 둬도 판결 순서(막대 → 표 수 → 도장)는 지키고, 움직임만 부드러운 페이드로 */
+@keyframes vfade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.vc-stamp{animation-name:vfade}.vcard{animation-name:vfade}.vcard.ex{animation-name:vfade,redline}}
+/* ===== 마을 사람 캐릭터 ===== */
+.tok{background:none!important;clip-path:none!important;-webkit-clip-path:none!important;box-shadow:none!important;aspect-ratio:auto;padding:0;justify-content:flex-start;gap:.2vh;opacity:1}
+.tok .fig{position:relative;width:min(88%,11.5vh);aspect-ratio:1}
+.T-village.many .tok .fig{width:min(88%,9vh)}
+.tok .fig svg{width:100%;height:100%;display:block;overflow:visible}
+.tok .fig b{position:absolute;left:50%;top:96%;background:rgba(20,16,30,.78);border-radius:999px;padding:.12em .5em;transform:translate(-50%,-50%);font-family:var(--fd);font-weight:400;font-size:min(1.7vw,2.9vh);line-height:1;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,.35)!important}
+.tok span{font-size:min(1.05vw,1.8vh);font-weight:800;color:var(--fg);text-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:min(.9vw,1.5vh)}
+body.day .tok span,body.dawn .tok span{text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.tok.dead{opacity:1}
+.tok.dead .fig{animation:float 3.2s ease-in-out infinite;opacity:.82}
+.tok.dead .fig b{color:#C9D1EE!important;text-shadow:none!important;background:rgba(30,35,70,.55)}
+.tok.dead span{opacity:.7}
+.tok .tk-sub{font-size:min(.85vw,1.4vh);opacity:.85}
+.tok .tk-ok{bottom:auto;top:52%;right:4%;font-size:min(1.5vw,2.4vh);text-shadow:0 0 6px rgba(0,0,0,.25)}
+.tok .tk-role{top:-2%;left:auto;right:2%;transform:none;font-size:min(1.6vw,2.6vh);background:var(--card);border-radius:50%;padding:.2em;line-height:1}
+.tok .tk-cand{top:-4%;font-size:min(.95vw,1.5vh);padding:.15em .6em}
+.tok.cand .fig::before{content:"";position:absolute;left:12%;right:12%;bottom:-2%;height:16%;border-radius:50%;background:radial-gradient(closest-side,rgba(215,66,94,.75),transparent);animation:pulse 1.4s ease-in-out infinite}
+.tok.t-mafia .fig::after,.tok.t-citizen .fig::after{content:"";position:absolute;inset:8% 10% 0;border-radius:50%;z-index:-1;opacity:.45}
+.tok.t-mafia .fig::after{background:radial-gradient(closest-side,#D7425E,transparent)}
+.tok.t-citizen .fig::after{background:radial-gradient(closest-side,#3E7BE6,transparent)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5%)}}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+/* 펑! 유령으로 변신 */
+.tok.poof .fig{animation:poofIn 1.6s cubic-bezier(.2,.9,.3,1.3) both,float 3.2s ease-in-out 1.6s infinite;animation-delay:var(--off,0s),calc(1.6s + var(--off,0s))}
+.tok.poof::after{content:"";position:absolute;left:50%;top:38%;width:90%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.95) 0 30%,rgba(255,255,255,.5) 45%,transparent 70%);animation:smoke 1.4s ease-out both;animation-delay:var(--off,0s);pointer-events:none}
+@keyframes poofIn{0%{transform:scale(.3) rotate(-20deg);opacity:0}35%{opacity:0}60%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:.82}}
+@keyframes smoke{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+.T-village{gap:1.2vh .6vw}
+@media (prefers-reduced-motion: reduce){.tok .fig,.tok.poof::after,.tok.cand .fig::before{animation:none!important}}
+.vpop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(14,10,24,.62);backdrop-filter:blur(3px);cursor:pointer;padding:4vh 4vw 12vh}
+.vpop-in{width:min(92vw,1500px);max-height:84vh;overflow:auto;background:rgba(42,30,52,.96);border-radius:3vh;padding:3.5vh 3vw;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.vpop h2{font-family:var(--fd);font-weight:400;font-size:min(4.4vw,7.5vh);margin-bottom:2.5vh;color:#FFF3E8}
+.vpop .vgrid{grid-template-columns:repeat(auto-fit,minmax(min(26vw,440px),1fr));gap:2.4vh 1.8vw}
+.vpop .vcard{padding:2.6vh 2vw;border-radius:2.4vh;gap:1.4vh;background:#3A2944}
+.vpop .vc-name{font-size:min(3.4vw,5.6vh);padding-right:min(9vw,15vh)}
+.vpop .vc-bar{height:2.6vh;border-radius:1.3vh;margin-right:min(10vw,17vh)}
+.vpop .vc-n{margin-right:min(10vw,17vh)}
+.vpop .vc-stamp{top:50%!important;margin-top:-3.2vh}
+.vpop .vc-n{font-size:min(1.9vw,3.2vh)}
+.vpop .vc-stamp{font-size:min(3vw,5vh);top:2vh;right:1.6vw;border-width:.5vh;border-radius:1.4vh;padding:0 .8vw}
+.vpop .vc-q{font-size:min(1.8vw,3vh);top:2.4vh;right:1.8vw}
+.vpop .vd-note{font-size:min(1.6vw,2.7vh);margin-top:2vh}
+.vpop-x{margin-top:1.6vh;color:var(--muted);font-size:min(1.1vw,1.9vh);text-align:right}
+.T-ctrl{position:relative;z-index:25}
 </style>
 </head>
 <body class="night">
@@ -487,7 +542,7 @@ body.night .vcard.sv .vc-stamp{color:var(--ghost)}
    - 광장 재판: 후보 지명(남은 마피아 수만큼) → 최후의 발언 → 최종 판정(과반이면 처형)
    - 처형된 사람의 정체는 비공개, 아침마다 생존 인원과 남은 마피아 수만 발표
    - 죽은 사람은 유령: 마피아는 마피아 편, 그 밖의 사람은 편을 직접 고름
-     유령은 밀담에 참여하고 광장 재판 동안 엎드림, 밤마다 '영혼 투시'로 1명의 직업 확인
+     유령은 자유 대화에 참여하고 광장 재판 동안 엎드림, 밤마다 '영혼 투시'로 1명의 직업 확인
    ===================================================================== */
 
 // ▼▼▼ 여기에 Firebase 콘솔의 설정값을 붙여 넣으세요 (null이면 이 브라우저 안에서만 테스트로 동작) ▼▼▼
@@ -614,7 +669,7 @@ const COURT = ['court', 'nominate', 'runoff', 'defense', 'judge', 'verdict'];
 const PH = {
   lobby:    { name: '입장',        icon: '🏠', sky: 'night' },
   role:     { name: '직업 확인',   icon: '📱', sky: 'night', phone: true },
-  talk:     { name: '밀담',        icon: '📵', sky: 'day' },
+  talk:     { name: '자유 대화',        icon: '📵', sky: 'day' },
   court:    { name: '광장 토론',   icon: '🏛️', sky: 'plaza' },
   nominate: { name: '후보 지명',   icon: '🗳️', sky: 'plaza', phone: true },
   runoff:   { name: '결선 투표',   icon: '🔁', sky: 'plaza', phone: true },
@@ -639,7 +694,7 @@ function defaultSettings() {
 }
 
 /* ---------------- 상태 ---------------- */
-const App = { mode: null, code: null, pid: null, hostId: null, active: false, busy: false, admin: false, demo: false, view: 'phone',
+const App = { music: (() => { try { return localStorage.getItem('mafia_music') !== '0'; } catch (e) { return true; } })(), mode: null, code: null, pid: null, hostId: null, active: false, busy: false, admin: false, demo: false, view: 'phone',
               slides: false, slide: 0, sound: true, lastKey: '', hostKey: '', drawer: false, setOpen: false, lookSel: null, sideSel: null, unsub: [], timers: [] };
 let S = {};
 
@@ -805,10 +860,8 @@ function resolveNominateUpdates(d) {
     tally[v] = (tally[v] || 0) + 1;
   }
   const K = Math.max(1, alive.filter(id => roleOf(id) === 'mafia').length);
-  // 2표 이상 받은 사람 중 득표 상위 K명. K번째와 표가 같으면 모두 후보 (결선 없음)
-  const pool = Object.keys(tally).filter(id => tally[id] >= 2).sort((a, b) => tally[b] - tally[a] || num(a) - num(b));
-  const thr = pool.length > K ? tally[pool[K - 1]] : 0;
-  const pk = { fixed: pool.filter(id => tally[id] >= thr), tied: [], slots: 0 };
+  // 득표 상위 K명(K = 남은 마피아 수). 경계 동점으로 K명을 넘으면 그 동점자들은 후보에서 빠짐 (결선 없음 → 후보는 항상 K명 이하)
+  const pk = { fixed: topWithTie(tally, K).fixed, tied: [], slots: 0 };
   up['pub/nom'] = { d, K, cands: pk.fixed, tied: pk.tied.length ? pk.tied : null, slots: pk.slots, voters, round: 1,
     tally: Object.keys(tally).sort((a, b) => tally[b] - tally[a] || num(a) - num(b)).slice(0, Math.max(8, K + 3)).map(id => ({ id, c: tally[id] })) };
   return { up, cands: pk.fixed, tied: pk.tied };
@@ -1247,7 +1300,7 @@ function nextLabel() {
   if (ph === 'nominate') return '후보 확정';
   if (ph === 'verdict') return S.hs && S.hs.pendingWin ? '결과 보기' : '밤으로';
   if (ph === 'night') return '아침으로';
-  const nx = { role: '밀담 시작', talk: '광장 토론으로', court: '후보 지명 투표로', runoff: '후보 확정', judge: '판결 공개', morning: '밀담 시작' }[ph];
+  const nx = { role: '자유 대화 시작', talk: '광장 토론으로', court: '후보 지명 투표로', runoff: '후보 확정', judge: '판결 공개', morning: '자유 대화 시작' }[ph];
   return nx || '다음 단계';
 }
 // 밤에 능력을 써야 하는 사람(마피아·경찰·의사)이 아직 안 골랐는지
@@ -1322,6 +1375,64 @@ function hostOnData() {
 }
 
 let AC = null;
+/* 배경음악: 선생님 화면에서만. 아침·자유 대화 / 재판·투표 / 밤 세 가지를 Web Audio로 직접 연주 */
+const BGM_OF = { lobby: 'night', role: 'night', talk: 'day', morning: 'day', court: 'vote', nominate: 'vote', runoff: 'vote', defense: 'vote', judge: 'vote', verdict: 'vote', night: 'night', end: 'day' };
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const TRACKS = {
+  // 아침·자유 대화: 밝고 통통 튀는 C장조 (C-Am-F-G)
+  day: { bpm: 104, chords: [[48, 60, 64, 67], [45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62]],
+    mel: [72, 0, 76, 0, 79, 76, 74, 0, 72, 0, 69, 0, 72, 74, 76, 0, 77, 0, 76, 74, 72, 0, 69, 0, 71, 0, 74, 0, 79, 0, 0, 0],
+    wave: 'triangle', bass: 'root2', pad: .03, mv: .06 },
+  // 재판·투표: 살짝 긴장되는 A단조 스타카토 (Am-F-G-E)
+  vote: { bpm: 118, chords: [[45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62], [40, 56, 59, 64]],
+    mel: [69, 0, 0, 72, 0, 71, 0, 0, 69, 0, 0, 72, 0, 74, 0, 0, 71, 0, 0, 74, 0, 72, 0, 0, 68, 0, 71, 0, 76, 0, 0, 0],
+    wave: 'square', bass: 'pulse', pad: 0, mv: .025, tick: true },
+  // 밤: 느린 D단조 오르골 (Dm-Bb-Gm-A)
+  night: { bpm: 70, chords: [[38, 62, 65, 69], [34, 62, 65, 70], [43, 62, 67, 70], [45, 61, 64, 69]],
+    mel: [86, 0, 89, 0, 93, 0, 91, 0, 89, 0, 0, 0, 86, 0, 0, 0, 82, 0, 86, 0, 89, 0, 88, 0, 85, 0, 0, 0, 0, 0, 0, 0],
+    wave: 'sine', bass: 'long', pad: .045, mv: .05 }
+};
+const BGM = {
+  ctx: null, out: null, name: null, gain: null, step: 0, next: 0, timer: null,
+  init() {
+    if (this.ctx) return true;
+    try { this.ctx = AC || new (window.AudioContext || window.webkitAudioContext)(); AC = this.ctx; } catch (e) { return false; }
+    this.out = this.ctx.createGain(); this.out.gain.value = 0.55; this.out.connect(this.ctx.destination);
+    document.addEventListener('pointerdown', () => { if (this.ctx.state === 'suspended') this.ctx.resume(); }, { capture: true });
+    return true;
+  },
+  set(name) {
+    if (name === this.name) return;
+    if (name && !this.init()) return;
+    if (this.gain) { const g = this.gain, t = this.ctx.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 1.2); setTimeout(() => g.disconnect(), 1500); this.gain = null; }
+    clearInterval(this.timer); this.timer = null; this.name = name;
+    if (!name) return;
+    const t = this.ctx.currentTime;
+    this.gain = this.ctx.createGain(); this.gain.gain.setValueAtTime(0, t); this.gain.gain.linearRampToValueAtTime(1, t + 1.5); this.gain.connect(this.out);
+    this.step = 0; this.next = t + 0.15;
+    this.timer = setInterval(() => this.tick(), 90);
+  },
+  note(f, t, dur, vol, wave, attack = 0.01) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = wave; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.gain); o.start(t); o.stop(t + dur + 0.05);
+  },
+  tick() {
+    if (!this.ctx || !this.gain || this.ctx.state !== 'running') return;
+    const T = TRACKS[this.name]; const e = 60 / T.bpm / 2; // 8분음표
+    while (this.next < this.ctx.currentTime + 0.3) {
+      const t = this.next, i = this.step % 32, bar = Math.floor(i / 8), ch = T.chords[bar], k = i % 8;
+      if (T.pad && k === 0) ch.slice(1).forEach(m => this.note(mtof(m), t, e * 8, T.pad, 'sine', 0.4));
+      if (T.bass === 'root2' && (k === 0 || k === 4)) this.note(mtof(ch[0]), t, e * 1.8, 0.09, 'sine');
+      if (T.bass === 'pulse') this.note(mtof(ch[0] + (k % 2 ? 7 : 0)), t, e * 0.6, 0.07, 'triangle');
+      if (T.bass === 'long' && k === 0) this.note(mtof(ch[0]), t, e * 7.5, 0.08, 'sine', 0.3);
+      if (T.tick && k % 2 === 1) this.note(2400, t, 0.03, 0.012, 'square');
+      const m = T.mel[i]; if (m) this.note(mtof(m), t, T.wave === 'sine' ? e * 3 : e * 0.9, T.mv, T.wave);
+      this.next += e; this.step++;
+    }
+  }
+};
 function chime(kind) {
   if (!App.sound) return;
   try {
@@ -1447,6 +1558,7 @@ async function cleanupOldRooms() {
   } catch (e) {}
 }
 function leaveRoom() {
+  BGM.set(null);
   App.unsub.forEach(f => f()); App.unsub = []; App.timers.forEach(clearInterval); App.timers = []; S = {};
   App.demo = false; const db = $('#demobar'); if (db) db.innerHTML = ''; const ov = $('#overlay'); if (ov) ov.innerHTML = '';
 }
@@ -1495,20 +1607,83 @@ function enterTeacher(code, hostId) {
 }
 function joinURL() { return location.origin + location.pathname + '?room=' + App.code; }
 
+// 마을 사람 캐릭터: 살아 있으면 시민, 죽으면 유령 (처형·암살 순간에 펑! 하고 변신)
+// 누아르 풍 마을 사람: 모자·코트·넥타이, 그림자 진 얼굴. 죽으면 반투명한 유령
+const COATS = ['#5B4A6B', '#4A5A6B', '#6B4A4A', '#46604F', '#6B5E4A', '#3E4A6B', '#6B4A62', '#55606B', '#5E6B4A', '#6B5148', '#4F5566', '#62506A'];
+const HATS = ['#26222E', '#2E2620', '#1E2430', '#33262A', '#2A2E26'];
+const TIES = ['#8E2B3B', '#2B4A8E', '#7A5A1E', '#3E6B4A', '#5A2B6B'];
+const GHOST_DEF = '<defs><linearGradient id="ggr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9EEF8" stop-opacity=".96"/><stop offset=".65" stop-color="#C3CDE6" stop-opacity=".75"/><stop offset="1" stop-color="#9FB0D0" stop-opacity="0"/></linearGradient></defs>';
+function figSVG(n, state) {
+  if (state !== 'alive') {
+    const sleep = state === 'sleep';
+    const face = sleep
+      ? '<path d="M38 44 q5 3 10 0 M52 44 q5 3 10 0" stroke="#1B1F33" stroke-width="2.6" fill="none" stroke-linecap="round"/><text x="68" y="24" font-size="13" font-weight="900" fill="#8E97C2">z</text><text x="78" y="14" font-size="9" font-weight="900" fill="#8E97C2">z</text>'
+      : '<ellipse cx="42.5" cy="43" rx="4.2" ry="6.4" fill="#1B1F33"/><ellipse cx="57.5" cy="43" rx="4.2" ry="6.4" fill="#1B1F33"/><ellipse cx="50" cy="58" rx="3.2" ry="4.4" fill="#1B1F33" opacity=".75"/>';
+    return `<svg viewBox="0 0 100 100" aria-hidden="true">${GHOST_DEF}
+      <path d="M21 92 Q16 60 21 38 Q27 11 50 11 Q73 11 79 38 Q84 60 79 92 Q71 81 64 92 Q57 81 50 94 Q43 81 36 92 Q29 81 21 92Z" fill="url(#ggr)"/>${face}</svg>`;
+  }
+  // 그림자 용의자 30종: 머리 모양 10가지 × 눈 3가지 (번호마다 모두 다름) + 금빛 소품
+  const k = '#15111D', g = '#F4C24D', i = (n - 1) % 30, hv = i % 10, ev = Math.floor(i / 10), acc = (n * 7) % 5;
+  const HEAD = [
+    `<path d="M27 34 Q27 6 50 5 Q73 6 73 34Z" fill="${k}"/><ellipse cx="50" cy="34.5" rx="40" ry="7" fill="${k}"/>`,                       // 중절모
+    `<path d="M23 40 Q24 12 50 12 Q76 13 78 33 L94 40 Q62 45 23 40Z" fill="${k}"/>`,                                                       // 헌팅캡
+    `<path d="M22 54 Q19 18 50 17 Q81 18 78 54Z" fill="${k}"/>`,                                                                           // 짧은 머리
+    `<path d="M20 86 Q14 20 50 17 Q86 20 80 86 L73 86 Q76 44 50 40 Q24 44 27 86Z" fill="${k}"/>`,                                           // 긴 머리
+    `<path d="M24 42 Q24 10 50 9 Q76 10 76 42Z" fill="${k}"/><rect x="22" y="36" width="56" height="10" rx="4" fill="${k}" stroke="rgba(190,170,230,.35)" stroke-width="1.2"/><circle cx="50" cy="8" r="5" fill="${k}"/>`, // 비니
+    `<path d="M31 32 Q31 9 50 9 Q69 9 69 32Z" fill="${k}"/><ellipse cx="50" cy="32" rx="28" ry="5" fill="${k}"/>`,                          // 둥근 모자
+    `<path d="M24 50 Q22 20 50 19 Q78 20 76 50Z" fill="${k}"/><circle cx="50" cy="12" r="10" fill="${k}"/>`,                                // 올림머리
+    `<path d="M23 50 L26 24 L33 32 L38 13 L45 27 L50 8 L55 27 L62 13 L67 32 L74 24 L77 50Z" fill="${k}"/>`,                                // 삐죽 머리
+    `<path d="M14 92 Q10 14 50 10 Q90 14 86 92 L76 92 Q80 40 50 36 Q20 40 24 92Z" fill="${k}" stroke="rgba(190,170,230,.3)" stroke-width="1.2"/>`, // 후드
+    `<path d="M22 38 Q30 14 58 16 Q80 18 80 32 Q60 30 22 38Z" fill="${k}"/><circle cx="58" cy="14" r="3" fill="${k}"/>`                     // 베레모
+  ][hv];
+  const EYES = [
+    `<path d="M35 58 Q41 53.5 47 58 Q41 60.5 35 58Z" fill="${g}"/><path d="M53 58 Q59 53.5 65 58 Q59 60.5 53 58Z" fill="${g}"/><circle cx="41" cy="57.6" r="1.5" fill="${k}"/><circle cx="59" cy="57.6" r="1.5" fill="${k}"/>`,
+    `<circle cx="41" cy="58" r="4.3" fill="${g}"/><circle cx="59" cy="58" r="4.3" fill="${g}"/><circle cx="41.8" cy="58.4" r="1.7" fill="${k}"/><circle cx="59.8" cy="58.4" r="1.7" fill="${k}"/>`,
+    `<path d="M34 55 L47 59 L35 60Z" fill="${g}"/><path d="M66 55 L53 59 L65 60Z" fill="${g}"/>`
+  ][ev];
+  const ACC = [
+    '',
+    `<circle cx="41" cy="58" r="7.5" fill="none" stroke="${g}" stroke-width="1.6" opacity=".8"/><circle cx="59" cy="58" r="7.5" fill="none" stroke="${g}" stroke-width="1.6" opacity=".8"/><path d="M48.5 58 H51.5" stroke="${g}" stroke-width="1.6" opacity=".8"/>`,
+    `<circle cx="23" cy="67" r="2.6" fill="${g}" opacity=".9"/>`,
+    `<path d="M60 66 L68 74" stroke="rgba(190,170,230,.55)" stroke-width="2" stroke-linecap="round"/>`,
+    `<path d="M40 73 Q45 69 50 72 Q55 69 60 73 Q55 75 50 74 Q45 75 40 73Z" fill="rgba(190,170,230,.35)"/>`
+  ][acc];
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">
+    <ellipse cx="50" cy="58" rx="31" ry="34" fill="rgba(244,194,77,.10)"/>
+    <circle cx="23" cy="60" r="5.5" fill="${k}"/><circle cx="77" cy="60" r="5.5" fill="${k}"/>
+    <ellipse cx="50" cy="58" rx="27" ry="30" fill="${k}" stroke="rgba(190,170,230,.35)" stroke-width="1.5"/>
+    ${HEAD}${EYES}${ACC}
+    <ellipse cx="41" cy="58" rx="9" ry="5" fill="${g}" opacity=".16"/><ellipse cx="59" cy="58" rx="9" ry="5" fill="${g}" opacity=".16"/></svg>`;
+}
+function verdictRevealAt(id) {
+  const v = S.pub && S.pub.verdict, m = S.meta;
+  if (!v || m.phase !== 'verdict' || v.d !== m.day || !App.vSeen || !App.vSeen['v' + v.d]) return 0;
+  const i = arr(v.res).findIndex(r => r.id === id);
+  return i < 0 ? 0 : App.vSeen['v' + v.d] + (VD0 + i * VDS + VST) * 1000;
+}
 function tok(id, o = {}) {
-  const p = P(id); const dead = p.alive === false; const r = roleOf(id); const ph = S.meta.phase;
+  const p = P(id); const ph = S.meta.phase; const r = roleOf(id);
+  const rv = p.alive === false ? verdictRevealAt(id) : 0;
+  const dead = p.alive === false && !(rv && Date.now() < rv);
+  if (rv && dead && App.deadAt && App.deadAt[id] !== 0) App.deadAt[id] = rv;
   const showRole = r && ph === 'end';
   const ok = o.check && o.check(id);
   const cand = !dead && ['runoff', 'defense', 'judge', 'verdict'].includes(ph) && candsNow().includes(id);
-  const tie = !dead && ph === 'runoff' && nomNow() && arr(nomNow().tied).includes(id);
-  const sp = speaker(); const now = sp && sp.id === id;
   const sleeping = dead && COURT.includes(ph);
   const sd = showRole ? (S.pub.end.sides || {})[id] : null;
-  return `<div class="tok ${dead ? 'dead' : ''} ${cand ? 'cand' : ''} ${now ? 'now' : ''} ${showRole ? 't-' + (sd || ROLES[r].team) : ''}" ${o.lobby ? `data-a="kick" data-id="${id}" title="눌러서 내보내기"` : ''}>
-    <b>${dead ? (sleeping ? '💤' : '👻') : (p.num || '·')}</b><span>${esc(p.name)}</span>
-    ${dead ? `<i class="tk-sub">${p.num}번 ${p.death && p.death.by === 'vote' ? '⚖️' : '🌙'}</i>` : ''}
+  // 방금 죽은 사람만 변신 애니메이션 (다시 그려도 처음부터 반복되지 않게 흐른 시간만큼 당김)
+  let poof = '';
+  if (dead && App.deadAt) {
+    if (App.deadAt[id] === undefined) App.deadAt[id] = Date.now();
+    const el = Date.now() - App.deadAt[id];
+    if (App.deadAt[id] && el < 2200) poof = ` poof" style="--off:-${el}ms`;
+  }
+  return `<div class="tok ${dead ? 'dead' : ''} ${cand ? 'cand' : ''} ${showRole ? 't-' + (sd || ROLES[r].team) : ''}${poof}" ${o.lobby ? `data-a="kick" data-id="${id}" title="눌러서 내보내기"` : ''}>
+    <div class="fig">${figSVG(p.num || 1, dead ? (sleeping ? 'sleep' : 'ghost') : 'alive')}<b>${p.num || '·'}</b></div>
+    <span>${esc(p.name)}</span>
+    ${dead ? `<i class="tk-sub">${p.death && p.death.by === 'vote' ? '⚖️ 처형' : '🌙 암살'}</i>` : ''}
     ${showRole ? `<i class="tk-role">${ROLES[r].emoji}</i>` : ''}
-    ${cand ? '<i class="tk-cand">후보</i>' : tie ? '<i class="tk-cand tie">결선</i>' : ''}
+    ${cand ? '<i class="tk-cand">후보</i>' : ''}
     ${ok ? '<i class="tk-ok">✓</i>' : ''}</div>`;
 }
 function settingsPanel() {
@@ -1530,12 +1705,20 @@ function settingsPanel() {
 function renderTeacher() {
   const m = S.meta;
   if (!m) { $('#app').innerHTML = '<div class="E"><p>방을 불러오는 중이에요…</p></div>'; return; }
+  const gk = App.code + ':' + (m.gameAt || 0);
+  if (App.deadKey !== gk) { App.deadKey = gk; App.deadAt = {}; deadIds().forEach(id => (App.deadAt[id] = 0)); }
+  BGM.set(App.music && !App.demo ? (BGM_OF[m.phase] || null) : null);
   setSky(PH[m.phase] ? PH[m.phase].sky : 'night');
   $('#app').innerHTML = m.phase === 'lobby' ? lobbyHTML() : gameHTML();
   if (m.phase === 'lobby' && window.QRCode && $('#qr')) {
     try { new QRCode($('#qr'), { text: joinURL(), width: 220, height: 220, colorDark: '#1C2142', colorLight: '#ffffff' }); } catch (e) {}
   }
   renderOverlay(); tickTimers();
+  // 판결 공개 시각마다 다시 그려서 처형된 사람을 차례로 유령으로
+  if (m.phase === 'verdict') for (const id of deadIds()) {
+    const t = verdictRevealAt(id), k = 'vr' + m.day + id; App.vrT = App.vrT || {};
+    if (t > Date.now() && !App.vrT[k]) { App.vrT[k] = 1; setTimeout(() => rerender(), t - Date.now() + 60); }
+  }
 }
 function lobbyHTML() {
   const ids = sortedIds(); const n = ids.length;
@@ -1581,6 +1764,7 @@ function candListHTML(big) {
   const cs = candVotes(); if (!cs.length) return '<p class="lead">후보가 없어요</p>';
   return `<div class="clist ${big ? 'big' : ''}">${cs.map(x => `<div class="citem"><b>${esc(who(x.id))}</b><span>${x.c}표${x.r != null ? ` · 결선 ${x.r}표` : ''}</span></div>`).join('')}</div>`;
 }
+const VD0 = 1.6, VDS = 3.2, VST = 2.2; // 판결 공개: 첫 막대까지 1.6초, 한 명마다 3.2초, 막대(1.6초)가 다 찬 뒤 0.6초 쉬고 도장(2.2초) — CSS와 맞출 것
 function verdictHTML(v, big) {
   if (!v) return '';
   const res = arr(v.res);
@@ -1594,7 +1778,7 @@ function verdictHTML(v, big) {
       <div class="vc-name">${esc(who(r.id))}</div>
       <div class="vc-bar"><i class="k" style="--w:${r.k / tot * 100}%"></i><i class="s" style="--w:${r.s / tot * 100}%"></i></div>
       <div class="vc-n"><span>처형 ${r.k}</span><span>살림 ${r.s}</span></div>
-      <div class="vc-stamp">${r.ex ? '처형' : '생존'}</div></div>`; }).join('')}</div>
+      <div class="vc-stamp">${r.ex ? '처형' : '생존'}</div><div class="vc-q">개표 중…</div></div>`; }).join('')}</div>
     <p class="muted vd-note">처형 ${v.need}표 이상이면 처형</p>`;
 }
 // 재판 기록: 그날 누가 누구를 지명했고, 후보마다 누가 처형·살림을 눌렀는지 (밤에 모두에게 공개)
@@ -1635,14 +1819,14 @@ function stageHTML() {
   if (ph === 'role') return `<p class="lead">직업을 확인하세요</p>${prog(sortedIds().filter(id => actDay(0)[id] && actDay(0)[id].ok).length, nAll, '명 확인')}`;
   if (ph === 'talk') return `<p class="lead">휴대폰을 넣고 일어나세요</p>${cluesHTML(d)}`;
   if (ph === 'court') return `<p class="lead">자리로 돌아오세요</p><p class="sub">💤 유령은 엎드려요</p>${cluesHTML(d)}`;
-  if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명</b>이 후보 <small>(2표 이상 · 동점이면 모두)</small></p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
+  if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명까지</b> 후보 <small>(동점으로 넘치면 그 동점자는 제외)</small></p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
   if (ph === 'runoff') { const nom = nomNow();
     return `<p class="sub">${nom.round > 1 ? `<b>${nom.round}차</b> · ` : ''}동점자 중 <b>${nom.slots}명</b> 선택</p>
       <div class="chiprow">${arr(nom.tied).map(id => `<span class="cchip tie">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('rvd'), nAlive, '명 제출')}`; }
   if (ph === 'defense') return candListHTML(true);
   if (ph === 'judge') return `<p class="sub">처형 <b>${needKill(nAlive - 1)}표</b> 이상이면 처형</p>
       <div class="chiprow">${candsNow().map(id => `<span class="cchip">${esc(who(id))}</span>`).join('')}</div>${prog(cnt('jd'), nAlive, '명 제출')}`;
-  if (ph === 'verdict') return verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true);
+  if (ph === 'verdict') return App.vpopHide === d ? verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true) : '<p class="lead">판결 공개 중…</p>';
   if (ph === 'night') return `<p class="lead">고개를 숙이세요</p>${d === 1 ? '<p class="sub">첫날 밤 · 암살 없음</p>' : ''}${prog(sortedIds().filter(id => A[id] && A[id].nd).length, nAll, '명 완료')}
       <p class="sub">${nightPending() ? '⏳ 능력 사용을 기다리는 중' : '✓ 능력 사용 끝'}</p>`;
   if (ph === 'morning') return newsHTML(S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null);
@@ -1662,10 +1846,11 @@ function gameHTML() {
       <div class="T-day">${ph === 'end' ? '' : `${d}일차`}${ph !== 'end' ? `<span class="pill-s">생존 ${aliveIds().length}</span><span class="pill-s m">마피아 ${s.mafia}</span>` : ''}</div>
       <h1 class="T-phase">${PH[ph].icon} ${PH[ph].name}</h1></div>
       <div class="T-clock"><span class="T-timer js-timer"></span></div></header>
+    ${ph === 'verdict' && App.vpopHide !== d ? `<div class="vpop" data-a="vpop"><div class="vpop-in"><h2>🔨 판결</h2>${verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true)}<p class="vpop-x">화면을 누르면 작게 볼 수 있어요</p></div></div>` : ''}
     <div class="T-main"><section class="T-stage">${stageHTML()}</section>
       <section class="T-village ${n > 24 ? 'many' : ''}">${sortedIds().map(id => tok(id, { check })).join('')}</section></div>
     <footer class="T-ctrl ${ph === 'end' ? 'solid' : ''}">
-      <button data-a="slides">📖 규칙</button><button data-a="sound">${App.sound ? '🔔' : '🔕'}</button>
+      <button data-a="slides">📖 규칙</button><button data-a="sound">${App.sound ? '🔔' : '🔕'}</button><button data-a="music" title="배경음악">${App.music ? '🎵' : '🔇'}</button>
       <button data-a="admin">👁 명단</button>
       ${ph === 'end' ? '' : '<button data-a="abort">중단</button>'}
       <span class="grow"></span>
@@ -1687,22 +1872,22 @@ const SLIDES = () => {
       <div><b>💉 의사 ${c.doctor}명</b>둘째 밤부터 밤마다 1명을 암살에서 지킴 (나 자신도 가능)</div>
       <div><b>🙂 시민 ${cit}명</b>대화와 추리, 밤에는 재판 기록 확인</div></div>`,
     `<h2>하루는 이렇게 흘러가요</h2><div class="flow">
-      <div><b>📵 밀담</b><small>돌아다니며 대화 (유령도!)</small></div>
+      <div><b>📵 자유 대화</b><small>돌아다니며 이야기 (유령도!)</small></div>
       <div><b>🏛️ 광장 재판</b><small>토론 → 후보 지명 → 최후의 발언 → 최종 판정</small></div>
       <div><b>🔨 판결</b><small>과반수면 처형</small></div>
       <div><b>🌙 밤</b><small>능력 사용 · 재판 기록 확인</small></div>
       <div><b>☀️ 아침</b><small>희생자 · 생존 인원 · 남은 마피아 수</small></div></div>`,
     `<h2>🏛️ 광장 재판</h2><div class="flow" style="grid-template-columns:repeat(4,1fr)">
       <div><b>① 토론</b><small>자리에서 지목하고 변론</small></div>
-      <div><b>② 후보 지명</b><small>1명씩 투표, 2표 이상 받은 사람 중 상위 ‘남은 마피아 수’명이 후보. 마지막 자리가 동점이면 모두 후보</small></div>
+      <div><b>② 후보 지명</b><small>1명씩 투표, 득표 상위 ‘남은 마피아 수’명까지 후보. 동점 때문에 그 수를 넘으면 그 동점자들은 후보에서 빠져요</small></div>
       <div><b>③ 최후의 발언</b><small>후보가 한 명씩 일어나 변론</small></div>
       <div><b>④ 최종 판정</b><small>후보마다 처형/살림, 과반수면 처형</small></div></div>
      <p>처형된 사람의 정체는 공개하지 않아요. 대신 <b>밤에 재판 기록</b>(누가 누구를 지명했고, 누가 처형·살림을 눌렀는지)이 모두의 휴대폰에 공개돼요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
     `<h2>👻 죽어도 끝이 아니에요</h2><div class="two">
       <div><b>편 정하기</b><p>마피아는 어떻게 죽든 마피아 편, 마피아가 아닌 사람이 암살당하면 시민 편이에요. 마피아는 동료도 암살할 수 있어서, 암살당한 유령이 꼭 시민 편인 건 아니에요. 투표로 처형된 경찰·의사·시민은 편을 직접 골라요.</p></div>
-      <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명이 <b>직업이 있는지</b> 들여다봐요. ‘직업 있음’이면 마피아·경찰·의사 중 하나, ‘없음’이면 시민이에요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 밀담에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
+      <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명이 <b>직업이 있는지</b> 들여다봐요. ‘직업 있음’이면 마피아·경찰·의사 중 하나, ‘없음’이면 시민이에요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 자유 대화에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
      <p>유령은 투표할 수 없고, 광장 재판 동안 엎드려 있어요. 고른 편이 이기면 유령도 함께 승리!</p>`,
-    `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>밀담·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>엎드린 유령이 고개 들기</p></div>
+    `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>자유 대화·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>엎드린 유령이 고개 들기</p></div>
      <div><b>얼마든지 OK</b><p>거짓말과 연기<br>다른 직업인 척하기<br>동맹 맺기, 배신하기</p></div></div>
      <p>투표 기록도 게임 속 이야기예요. 게임이 끝나면 서운해하기 없기!</p>`
   ];
@@ -1858,7 +2043,7 @@ function sBody() {
   if (ph === 'court') return pocket('🏛️', '광장 토론', '');
   if (ph === 'nominate') {
     const A = myAct(d); const others = aliveIds().filter(x => x !== App.pid);
-    return `<section class="s-card"><h3>🗳️ 처형 후보 지명 <small>2표↑ · 상위 ${status().mafia}명</small></h3>
+    return `<section class="s-card"><h3>🗳️ 처형 후보 지명 <small>상위 ${status().mafia}명까지</small></h3>
         <div class="chips">${others.map(id => chip(id, A.nv === id, 'nv', '', teamOf(App.pid) === 'mafia' && arr(sc.mates).includes(id) ? 'mate' : '')).join('')}<button class="chip wide ${A.nv === 'skip' ? 'on' : ''}" data-a="nv" data-id="skip">기권</button></div></section>
       ${doneBtn('nvDone', A.nvd, A.nv, A.nv ? '제출' : '1명 고르기')}`;
   }
@@ -1974,7 +2159,9 @@ async function onAction(a, el) {
     if (a === 'slnext') { App.slide++; return renderOverlay(); }
     if (a === 'slprev') { App.slide--; return renderOverlay(); }
     if (a === 'admin') { App.admin = !App.admin; App.slides = false; return renderOverlay(); }
+    if (a === 'vpop') { App.vpopHide = S.meta.day; return rerender(); }
     if (a === 'sound') { App.sound = !App.sound; if (App.sound) chime('day'); return rerender(); }
+    if (a === 'music') { App.music = !App.music; try { localStorage.setItem('mafia_music', App.music ? '1' : '0'); } catch (e) {} BGM.init(); if (BGM.ctx && BGM.ctx.state === 'suspended') BGM.ctx.resume(); return rerender(); }
     if (a === 'takeover') return DB.update(roomPath('meta'), { hostId: App.hostId });
     if (!App.active) return;
     if (a === 'kick') { if (confirm(`${nm(id)} 님을 방에서 내보낼까요?`)) DB.set(roomPath('players/' + id), null); return; }
