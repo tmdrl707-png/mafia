@@ -507,6 +507,35 @@ body.night .mcard{background:rgba(0,0,0,.28)}
 .mcard .mf svg{width:100%;height:auto;display:block}
 .mcard b{display:block;font-family:var(--fd);font-size:34px;line-height:1.05;margin-top:2px}
 .mcard span{display:block;font-weight:800;font-size:15px;word-break:keep-all}
+.reqbar{position:fixed;top:1.4vh;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;max-width:92vw}
+.reqbar .rq{display:flex;align-items:center;gap:12px;background:#fff;color:#1C2142;border-radius:14px;padding:10px 12px 10px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:min(1.4vw,2.4vh);font-weight:700}
+.reqbar button{border:0;border-radius:10px;padding:8px 16px;font:inherit;font-weight:800;background:#E6E8F2;color:#1C2142;cursor:pointer}
+.reqbar button.ok{background:var(--lamp)}
+.waitreq{text-align:center}.waitreq .pi{font-size:64px}.waitreq h2{font-family:var(--fd);font-weight:400;font-size:28px;margin:8px 0}
+.waitreq p{margin:10px 0;line-height:1.5}
+.rejoin-note{font-size:13px;margin:10px 4px 0}
+/* 전자칠판: 선생님 화면은 항상 한 화면에 (넘치면 무대·마을을 자동으로 줄임) */
+@media (min-width:901px){
+  .T{height:100vh;height:100dvh;min-height:0;overflow:hidden;grid-template-rows:auto minmax(0,1fr) auto}
+  .T-main{min-height:0;overflow:hidden}
+  .T-stage,.T-village{min-height:0}
+  .T-village{align-content:safe center}
+  .T-stage.fit{transform-origin:top left}
+  .T-village.fit{transform-origin:top center}
+}
+.pres .prlist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.pr{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:10px 12px;border-radius:12px;border:2px solid}
+.pr.m{border-color:var(--blood);background:rgba(215,66,94,.14)}
+.pr.c{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
+.pr .prn{font-weight:800;font-size:17px}.pr .prn b{font-family:var(--fd);font-weight:400;margin-right:4px}
+.pr .prr{font-weight:900;font-size:16px}.pr.m .prr{color:#FF8FA3}
+.pr small{grid-column:1/-1;opacity:.6;font-size:12px}
+.pnow{font-size:16px;margin:4px 0 10px;padding:10px 12px;border-radius:12px;background:rgba(244,194,77,.15)}
+.chip .pk.pm{background:var(--blood);color:#fff}.chip .pk.pc{background:#1E9E73;color:#fff}
+.sidehdr{grid-column:1/-1;font-family:var(--fd);font-size:min(2.2vw,3.4vh);padding:.4vh 1vw;border-radius:1.2vh;display:flex;align-items:baseline;gap:1vw}
+.sidehdr small{font-family:var(--fb, inherit);font-size:.55em;opacity:.85}
+.sidehdr.m{background:rgba(215,66,94,.85);color:#fff}.sidehdr.c{background:rgba(62,123,230,.85);color:#fff}
+.rl.rlm h3{color:var(--blood)}.rl.rlc h3{color:var(--cit)}
 </style>
 </head>
 <body class="night">
@@ -992,8 +1021,11 @@ function resolveNightUpdates(d) {
   }
   const teamChecked = new Set(arr(h.checked.team)); Object.keys(found).forEach(t => teamChecked.add(t)); h.checked.team = [...teamChecked];
   for (const t of Object.keys(found)) if (R(t) === 'mafia') for (const p of found[t]) h.finds[p] = (h.finds[p] || 0) + 1;
+  h.pres = h.pres || {};
+  for (const t of Object.keys(found)) h.pres[t] = { d, m: R(t) === 'mafia' };
   for (const p of police) {
     up[`secret/${p}/checked`] = h.checked.team;
+    up[`secret/${p}/pres`] = h.pres; // 경찰 팀이 지금까지 조사한 사람과 결과 (경찰 화면 표시용)
     const ts = Object.keys(found).sort((a, b) => num(a) - num(b));
     if (!ts.length) { if (police.length > 1) L(p, '🚓 오늘 밤은 경찰 누구도 조사하지 않았어요.'); continue; }
     for (const t of ts) {
@@ -1035,7 +1067,7 @@ function endUpdates(win) {
   return { 'meta/phase': 'end', 'meta/startedAt': null, 'pub/end': { w: win.w, why: win.why, roles, sides, aw, ph: (S.meta && S.meta.phase) || null } };
 }
 function resetUpdates() {
-  const up = { 'meta/phase': 'lobby', 'meta/day': 0, 'meta/startedAt': null, 'meta/gameAt': null, 'meta/logId': null, act: null, pub: null, hs: null, secret: null, choice: null, rec: null };
+  const up = { 'meta/phase': 'lobby', 'meta/day': 0, 'meta/startedAt': null, 'meta/gameAt': null, 'meta/logId': null, act: null, pub: null, hs: null, secret: null, choice: null, rec: null, req: null };
   for (const id of Object.keys(S.players || {})) { up[`players/${id}/alive`] = null; up[`players/${id}/death`] = null; }
   return up;
 }
@@ -1318,7 +1350,7 @@ async function undoStep() {
   if (!App.demo && !confirm(`직전 단계(${d ? d + '일차 ' : ''}${PH[ph] ? PH[ph].name : ph})로 되돌릴까요?\n지금 단계에서 진행된 결과는 취소돼요.`)) return;
   st.pop(); saveUndo();
   const undos = ((S.meta && S.meta.undos) || 0) + 1;
-  const data = JSON.parse(JSON.stringify(snap)); const now = DB.now();
+  const data = JSON.parse(JSON.stringify(snap)); const now = DB.now(); data.req = S.req || null;
   data.meta.startedAt = now; data.meta.spkAt = now; data.meta.undos = undos;
   if (S.meta && S.meta.logId && !data.meta.logId && !App.demo) DB.set('logs/' + S.meta.logId, null).catch(() => {});
   App.vSeen = {}; App.vpopHide = null;
@@ -1524,13 +1556,39 @@ async function studentJoin() {
   const players = (await DB.get(`rooms/${code}/players`)) || {};
   const saved = store.getItem('mafia_pid_' + code);
   if (saved && players[saved]) return enterStudent(code, saved);
-  if (meta.phase !== 'lobby') return setErr('이미 게임이 시작됐어요. 다시 들어오려면 아래 재입장 코드를 쓰세요.');
+  // 이미 있는 이름 = 튕겨서 다시 들어오는 학생일 수 있음 → 선생님 화면에서 '허용'을 누르면 원래 자리로 복귀
+  const same = Object.keys(players).find(id => !players[id].bot && players[id].name === name);
+  if (same) return requestRejoin(code, name, meta.phase !== 'lobby');
+  if (meta.phase !== 'lobby') return setErr('이미 게임이 시작됐어요. 처음에 입장한 이름 그대로 써 주세요.');
   if (Object.keys(players).length >= MAX_PLAYERS) return setErr(`방이 꽉 찼어요 (최대 ${MAX_PLAYERS}명).`);
-  if (Object.values(players).some(p => p.name === name)) return setErr('같은 이름이 이미 있어요. 이름 뒤에 반이나 번호를 붙여 주세요.');
   const pid = 'p' + rid(8);
   await DB.set(`rooms/${code}/players/${pid}`, { name, joined: DB.now(), rejoin: String(100 + Math.floor(Math.random() * 900)) });
   store.setItem('mafia_pid_' + code, pid);
   enterStudent(code, pid);
+}
+// 재입장 요청: 학생 → rooms/{code}/req/{id}, 선생님이 허용하면 ok에 원래 학생 id가 들어옴
+async function requestRejoin(code, name, started) {
+  leaveRoom();
+  const rq = 'r' + rid(6);
+  await DB.set(`rooms/${code}/req/${rq}`, { name, at: DB.now() });
+  App.mode = 'wait';
+  $('#app').innerHTML = `<div class="E"><section class="E-card waitreq">
+    <div class="pi">🔄</div><h2>선생님 화면을 봐 주세요</h2>
+    <p><b>${esc(name)}</b> 이름으로 다시 들어가기를 요청했어요.<br>선생님이 <b>허용</b>을 누르면 원래 자리로 돌아가요.</p>
+    ${started ? '' : '<p class="muted">처음 들어온 거라면 같은 이름이 이미 있는 거예요. 취소하고 이름 뒤에 번호를 붙여 주세요.</p>'}
+    <button class="btn ghosty" data-a="reqcancel" data-id="${rq}" data-v="${code}">취소</button></section></div>`;
+  App.unsub.push(DB.on(`rooms/${code}/req/${rq}`, v => {
+    if (App.mode !== 'wait') return;
+    if (v && v.ok) { store.setItem('mafia_pid_' + code, v.ok); DB.set(`rooms/${code}/req/${rq}`, null); enterStudent(code, v.ok); }
+    else if (v && v.no) { DB.set(`rooms/${code}/req/${rq}`, null); leaveRoom(); renderEntry({ room: code, msg: '선생님이 거절했어요. 이름을 확인해 주세요.' }); }
+  }));
+}
+function reqBarHTML() {
+  const rq = S.req || {}; const ks = Object.keys(rq).filter(k => rq[k] && !rq[k].ok && !rq[k].no);
+  if (!ks.length) return '';
+  return `<div class="reqbar">${ks.map(k => { const r = rq[k]; const pid = Object.keys(S.players || {}).find(id => !P(id).bot && P(id).name === r.name);
+    return `<div class="rq"><span>🔄 ${pid ? `<b>${num(pid)}번 ${esc(r.name)}</b> 다시 들어오기 요청` : `<b>${esc(r.name)}</b> (명단에 없는 이름)`}</span>
+      ${pid ? `<button class="ok" data-a="reqok" data-id="${k}" data-v="${pid}">허용</button>` : ''}<button data-a="reqno" data-id="${k}">거절</button></div>`; }).join('')}</div>`;
 }
 async function studentRejoin() {
   const code = $('#inCode').value.trim(), name = $('#inName').value.trim(), rc = $('#inRe').value.trim();
@@ -1742,17 +1800,27 @@ function renderTeacher() {
   if (App.deadKey !== gk) { App.deadKey = gk; App.deadAt = {}; deadIds().forEach(id => (App.deadAt[id] = 0)); }
   BGM.set(App.music && !App.demo ? (BGM_OF[m.phase] || null) : null);
   setSky(PH[m.phase] ? PH[m.phase].sky : 'night');
-  $('#app').innerHTML = m.phase === 'lobby' ? lobbyHTML() : gameHTML();
+  $('#app').innerHTML = (m.phase === 'lobby' ? lobbyHTML() : gameHTML()) + reqBarHTML();
   if (m.phase === 'lobby' && window.QRCode && $('#qr')) {
     try { new QRCode($('#qr'), { text: joinURL(), width: 220, height: 220, colorDark: '#1C2142', colorLight: '#ffffff' }); } catch (e) {}
   }
-  renderOverlay(); tickTimers();
+  renderOverlay(); tickTimers(); fitTeacher();
   // 판결 공개 시각마다 다시 그려서 처형된 사람을 차례로 유령으로
   if (m.phase === 'verdict') for (const id of deadIds()) {
     const t = verdictRevealAt(id), k = 'vr' + m.day + id; App.vrT = App.vrT || {};
     if (t > Date.now() && !App.vrT[k]) { App.vrT[k] = 1; setTimeout(() => rerender(), t - Date.now() + 60); }
   }
 }
+// 무대·마을 내용이 화면 높이를 넘으면 비율을 유지한 채 줄여서 한 화면에 맞춤
+function fitTeacher() {
+  if (innerWidth <= 900) return;
+  for (const el of document.querySelectorAll('.T-stage, .T-village')) {
+    el.classList.remove('fit'); el.style.transform = '';
+    const need = el.scrollHeight, have = el.clientHeight;
+    if (have > 0 && need > have + 2) { el.classList.add('fit'); el.style.transform = `scale(${Math.max(0.45, have / need).toFixed(3)})`; }
+  }
+}
+addEventListener('resize', () => { if (App.mode === 'teacher' || App.demo) fitTeacher(); });
 function lobbyHTML() {
   const ids = sortedIds(); const n = ids.length;
   return `<div class="T T-lobby">
@@ -1844,6 +1912,13 @@ function endHTML(e) {
   return `<div class="end"><div class="end-win">${title}</div><p class="lead" style="font-size:1.2em">${esc(e.why)}</p>
     <div class="aw">${arr(e.aw).map(a => `<div><span>${a.e}</span><b>${esc(a.t)}</b><em>${arr(a.ids).map(id => esc(who(id))).join(', ')}</em><small>${esc(a.n)}</small></div>`).join('')}</div></div>`;
 }
+// 게임 끝: 마피아 편 / 시민 편으로 나눠서 보여 주기
+function endVillage() {
+  const e = S.pub.end, sd = id => (e.sides || {})[id] || (roleOf(id) === 'mafia' ? 'mafia' : 'citizen');
+  const grp = (side, label) => { const ids = sortedIds().filter(id => sd(id) === side);
+    return `<div class="sidehdr ${side === 'mafia' ? 'm' : 'c'}">${label} <small>${ids.length}명${e.w === side ? ' · 승리!' : ''}</small></div>${ids.map(id => tok(id)).join('')}`; };
+  return grp('mafia', '🔪 마피아 편') + grp('citizen', '🙂 시민 편');
+}
 function prog(n, of, word) { return `<div class="prog">${n} / ${of}<small>${word}</small></div>`; }
 function stageHTML() {
   const m = S.meta, d = m.day; const ph = m.phase; const A = actDay(d);
@@ -1881,7 +1956,7 @@ function gameHTML() {
       <div class="T-clock"><span class="T-timer js-timer"></span></div></header>
     ${ph === 'verdict' && App.vpopHide !== d ? `<div class="vpop" data-a="vpop"><div class="vpop-in"><h2>🔨 판결</h2>${verdictHTML(S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null, true)}<p class="vpop-x">화면을 누르면 작게 볼 수 있어요</p></div></div>` : ''}
     <div class="T-main"><section class="T-stage">${stageHTML()}</section>
-      <section class="T-village ${n > 24 ? 'many' : ''}">${sortedIds().map(id => tok(id, { check })).join('')}</section></div>
+      <section class="T-village ${n > 24 ? 'many' : ''}">${ph === 'end' && S.pub && S.pub.end && S.pub.end.sides ? endVillage() : sortedIds().map(id => tok(id, { check })).join('')}</section></div>
     <footer class="T-ctrl ${ph === 'end' ? 'solid' : ''}">
       <button data-a="slides">📖 규칙</button><button data-a="sound">${App.sound ? '🔔' : '🔕'}</button><button data-a="music" title="배경음악">${App.music ? '🎵' : '🔇'}</button>
       <button data-a="admin">👁 명단</button>
@@ -2069,6 +2144,7 @@ function drawerHTML() {
   return `<div class="dr-in"><div class="dr-top"><h2>📒 직업 · 수첩</h2><button data-a="drawer">닫기</button></div>
     <div style="margin-top:12px">${roleCard()}</div>
     ${mySec().role ? `<section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>` : ''}
+    <p class="muted rejoin-note">휴대폰이 꺼지면: 같은 방 번호와 이름으로 다시 입장 → 선생님이 허용 · 재입장 코드 <b>${esc(me().rejoin || '')}</b></p>
     <section class="s-card logs"><h3>수첩</h3>${logs.length ? logsHTML(logs) : '<p class="muted">아직 없어요</p>'}</section>
     ${recDays().map(d => recBox('w' + d, `📜 ${d}일 재판 기록`, d)).join('')}</div>`;
 }
@@ -2135,7 +2211,8 @@ function sBody() {
   if (ph === 'morning') {
     const mo = S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null;
     const mine = arr(sc.log).filter(l => l.d === d - 1 && l.ph === 'n');
-    return `${sideCard}<section class="s-card news">${newsHTML(mo)}</section>
+    const pr = sc.role === 'police' && !dead ? policeResults(sc.pres, d - 1) : '';
+    return `${sideCard}${pr}<section class="s-card news">${newsHTML(mo)}</section>
       ${mine.length ? `<section class="s-card logs"><h3>📒 밤사이</h3>${logsHTML(mine)}</section>` : ''}${dead ? ghostRec() : ''}`;
   }
   if (ph === 'end') {
@@ -2143,8 +2220,9 @@ function sBody() {
     const mySide = e.sides && e.sides[App.pid];
     const res = e.w === 'none' ? '' : (mySide === e.w ? '🎉 승리!' : '😢 패배');
     return `<section class="endbox"><div class="end-win" style="font-family:var(--fd)">${e.w === 'citizen' ? '🙂 시민 편 승리' : e.w === 'mafia' ? '🔪 마피아 편 승리' : '게임 중단'}</div><p class="me-res">${res}</p></section>
-      <section class="s-card rl"><h3>모두의 정체</h3>${sortedIds().map(id => { const r = e.roles && e.roles[id]; const sd = e.sides && e.sides[id];
-        return `<p class="${sd === 'mafia' ? 'm' : ''}"><span>${esc(who(id))}${isAlive(id) ? '' : ` 👻${sd === 'mafia' ? '마피아 편' : '시민 편'}`}</span><span>${r ? ROLES[r].emoji + ' ' + ROLES[r].name : ''}</span></p>`; }).join('')}</section>`;
+      ${['mafia', 'citizen'].map(side => { const ids = sortedIds().filter(id => ((e.sides || {})[id] || 'citizen') === side);
+        return `<section class="s-card rl ${side === 'mafia' ? 'rlm' : 'rlc'}"><h3>${side === 'mafia' ? '🔪 마피아 편' : '🙂 시민 편'} <small>${ids.length}명${e.w === side ? ' · 승리' : ''}</small></h3>${ids.map(id => { const r = e.roles && e.roles[id];
+          return `<p class="${side === 'mafia' ? 'm' : ''}"><span>${esc(who(id))}${isAlive(id) ? '' : ' 👻'}${id === App.pid ? ' <b>(나)</b>' : ''}</span><span>${r ? ROLES[r].emoji + ' ' + ROLES[r].name : ''}</span></p>`; }).join('')}</section>`; }).join('')}`;
   }
   return '';
 }
@@ -2157,6 +2235,15 @@ function ghostRec() {
 function recBox(key, title, d) {
   App.recBox = App.recBox || {}; const o = !!App.recBox[key];
   return `<section class="s-card recbox ${o ? 'open' : ''}"><button class="rb-t" data-a="recbox" data-v="${key}"><span>${title}</span><i>${o ? '▲ 닫기' : '▼ 열기'}</i></button>${o ? `<div class="rb-in">${recordHTML(d)}</div>` : ''}</section>`;
+}
+// 경찰: 지금까지의 조사 결과를 한눈에 (마피아 먼저, 최근 순)
+function policeResults(pres, onlyDay) {
+  const ids = Object.keys(pres || {}).filter(id => P(id).name && (onlyDay == null || pres[id].d === onlyDay));
+  if (!ids.length) return '';
+  ids.sort((a, b) => (pres[b].m - pres[a].m) || (pres[b].d - pres[a].d) || num(a) - num(b));
+  return `<section class="s-card pres"><h3>🚓 ${onlyDay != null ? '지난밤 조사 결과' : '경찰 조사 결과'} <small>${onlyDay != null ? '' : '경찰끼리 공유'}</small></h3>
+    <div class="prlist">${ids.map(id => `<div class="pr ${pres[id].m ? 'm' : 'c'}"><span class="prn"><b>${num(id)}</b> ${esc(nm(id))}${isAlive(id) ? '' : ' 👻'}</span>
+      <span class="prr">${pres[id].m ? '🚨 마피아' : '✅ 마피아 아님'}</span><small>${pres[id].d}일 밤</small></div>`).join('')}</div></section>`;
 }
 function aliveNight(d) {
   const sc = mySec(); const r = sc.role; const A = myAct(d); const alive = aliveIds(); const pk = ST().pk;
@@ -2176,8 +2263,12 @@ function aliveNight(d) {
   } else if (r === 'police') {
     const ns = arr(A.ns); const ck = new Set(arr(sc.checked));
     const tp = new Set(sc.tpk && sc.tpk.d === d ? arr(sc.tpk.ids) : []);
-    roleSec = `<section class="s-card"><h3>🚓 조사 <small>${ns.length} / ${pk}</small></h3>
-      <div class="chips">${others.map(id => chip(id, ns.includes(id), 'pchk', tp.has(id) ? '<i class="pk tp">경찰 선택</i>' : ck.has(id) ? '<i class="pk ck">조사함</i>' : '')).join('')}</div></section>`;
+    const pres = sc.pres || {};
+    const tag = id => pres[id] ? (pres[id].m ? '<i class="pk pm">🚨 마피아</i>' : '<i class="pk pc">✅ 아님</i>') : tp.has(id) ? '<i class="pk tp">다른 경찰이 고름</i>' : '';
+    roleSec = `${policeResults(pres)}
+      <section class="s-card"><h3>🚓 오늘 밤 조사 <small>${ns.length} / ${pk}명 선택</small></h3>
+      ${ns.length ? `<p class="pnow">🔍 <b>${ns.map(id => esc(who(id))).join(', ')}</b> 조사 → 결과는 아침에 나와요</p>` : '<p class="muted">조사할 사람을 고르세요</p>'}
+      <div class="chips">${others.map(id => chip(id, ns.includes(id), 'pchk', tag(id))).join('')}</div></section>`;
   } else if (r === 'doctor' && d === 1) {
     roleSec = '<section class="s-card"><h3>💉 오늘은 쉬어요</h3></section>';
   } else if (r === 'doctor') {
@@ -2211,6 +2302,7 @@ async function onAction(a, el) {
   const id = el.dataset.id;
   if (a === 'join') return studentJoin();
   if (a === 'rejoin') return studentRejoin();
+  if (a === 'reqcancel') { DB.set(`rooms/${el.dataset.v}/req/${id}`, null); leaveRoom(); return renderEntry({ room: el.dataset.v }); }
   if (a === 'create') return teacherCreate();
   if (a === 'open') return teacherOpen();
   if (a === 'resume') return teacherResume();
@@ -2264,6 +2356,8 @@ async function onAction(a, el) {
       return advance();
     }
     if (a === 'next') return goNext();
+    if (a === 'reqok') return DB.update(roomPath('req/' + id), { ok: el.dataset.v });
+    if (a === 'reqno') return DB.update(roomPath('req/' + id), { no: true });
     if (a === 'undo') return undoStep();
     void m;
     if (a === 'abort') { if (confirm('게임을 중단하고 모두의 정체를 공개할까요?')) DB.update(roomPath(), endUpdates({ w: 'none', why: '선생님이 게임을 중단했어요.' })); return; }
@@ -2296,7 +2390,9 @@ async function onAction(a, el) {
     }
     if (m.phase === 'night') {
       if (alive) {
-        if (a === 'nact') { if (d === 1 && (sc.role === 'doctor' || sc.role === 'mafia')) return; if (sc.role === 'doctor' && id === sc.lastProtect) return; return W({ n: A.n === id ? null : id }); }
+        if (a === 'nact') { if (d === 1 && (sc.role === 'doctor' || sc.role === 'mafia')) return; if (sc.role === 'doctor' && id === sc.lastProtect) return;
+          if (sc.role === 'mafia' && A.n !== id && arr(sc.mates).includes(id) && !confirm(`⚠️ ${who(id)}님은 같은 마피아 동료예요!\n정말 동료를 암살할까요?`)) return;
+          return W({ n: A.n === id ? null : id }); }
         if (a === 'pchk') { let ns = arr(A.ns); if (ns.includes(id)) ns = ns.filter(x => x !== id); else { if (ns.length >= ST().pk) { if (ST().pk === 1) ns = []; else return; } ns = [...ns, id]; } return W({ ns }); }
         if (a === 'nightDone') return W({ nd: true });
       } else {
