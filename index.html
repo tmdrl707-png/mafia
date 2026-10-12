@@ -470,11 +470,11 @@ body.day .tok span,body.dawn .tok span{text-shadow:0 1px 0 rgba(255,255,255,.6)}
 /* 펑! 유령으로 변신 */
 .tok.poof .fig{animation:poofIn 1.6s cubic-bezier(.2,.9,.3,1.3) both,float 3.2s ease-in-out 1.6s infinite;animation-delay:var(--off,0s),calc(1.6s + var(--off,0s))}
 .tok.poof::after{content:"";position:absolute;left:50%;top:38%;width:90%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(circle,rgba(255,255,255,.95) 0 30%,rgba(255,255,255,.5) 45%,transparent 70%);animation:smoke 1.4s ease-out both;animation-delay:var(--off,0s);pointer-events:none}
+  background:radial-gradient(circle,rgba(255,255,255,.95) 0 30%,rgba(255,255,255,.5) 45%,transparent 70%);opacity:0;animation:smoke 1.4s ease-out both;animation-delay:var(--off,0s);pointer-events:none}
 @keyframes poofIn{0%{transform:scale(.3) rotate(-20deg);opacity:0}35%{opacity:0}60%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:.82}}
 @keyframes smoke{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
 .T-village{gap:1.2vh .6vw}
-@media (prefers-reduced-motion: reduce){.tok .fig,.tok.poof::after,.tok.cand .fig::before{animation:none!important}}
+@media (prefers-reduced-motion: reduce){.tok .fig,.tok.cand .fig::before{animation:none!important}.tok.poof::after{display:none}}
 .vpop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(14,10,24,.62);backdrop-filter:blur(3px);cursor:pointer;padding:4vh 4vw 12vh}
 .vpop-in{width:min(92vw,1500px);max-height:84vh;overflow:auto;background:rgba(42,30,52,.96);border-radius:3vh;padding:3.5vh 3vw;box-shadow:0 30px 80px rgba(0,0,0,.5)}
 .vpop h2{font-family:var(--fd);font-weight:400;font-size:min(4.4vw,7.5vh);margin-bottom:2.5vh;color:#FFF3E8}
@@ -490,6 +490,25 @@ body.day .tok span,body.dawn .tok span{text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .vpop .vd-note{font-size:min(1.6vw,2.7vh);margin-top:2vh}
 .vpop-x{margin-top:1.6vh;color:var(--muted);font-size:min(1.1vw,1.9vh);text-align:right}
 .T-ctrl{position:relative;z-index:25}
+.ghostrec details{border-top:1px solid rgba(255,255,255,.12);padding:6px 0}
+.ghostrec details:first-of-type{border-top:0}
+.ghostrec summary{font-weight:800;cursor:pointer;padding:4px 0}
+.ghostw h3{margin-bottom:6px}
+.recbox{padding:0;overflow:hidden}
+.rb-t{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;background:none;border:0;color:inherit;font:inherit;font-weight:800;font-size:17px;padding:16px 18px;cursor:pointer;text-align:left}
+.rb-t i{font-style:normal;font-size:13px;font-weight:800;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
+.recbox.open .rb-t{border-bottom:1px solid rgba(255,255,255,.12)}
+.rb-in{padding:12px 14px 16px}
+.mmeet h3{font-size:22px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
+.mcard{background:rgba(215,66,94,.07);border:2px solid rgba(215,66,94,.55);border-radius:16px;padding:8px 6px 10px;text-align:center}
+.mcard.me{border-color:var(--lamp)}
+body.night .mcard{background:rgba(0,0,0,.28)}
+.mcard.gone{opacity:.6}
+.mcard .mf{width:64px;margin:0 auto}
+.mcard .mf svg{width:100%;height:auto;display:block}
+.mcard b{display:block;font-family:var(--fd);font-size:34px;line-height:1.05;margin-top:2px}
+.mcard span{display:block;font-weight:800;font-size:15px;word-break:keep-all}
 </style>
 </head>
 <body class="night">
@@ -542,7 +561,7 @@ body.day .tok span,body.dawn .tok span{text-shadow:0 1px 0 rgba(255,255,255,.6)}
    - 광장 재판: 후보 지명(남은 마피아 수만큼) → 최후의 발언 → 최종 판정(과반이면 처형)
    - 처형된 사람의 정체는 비공개, 아침마다 생존 인원과 남은 마피아 수만 발표
    - 죽은 사람은 유령: 마피아는 마피아 편, 그 밖의 사람은 편을 직접 고름
-     유령은 자유 대화에 참여하고 광장 재판 동안 엎드림, 밤마다 '영혼 투시'로 1명의 직업 확인
+     유령은 자유 대화에 참여하고 광장 재판은 조용히 구경(말·투표·신호 X), 밤마다 '영혼 투시'로 1명의 직업 확인
    ===================================================================== */
 
 // ▼▼▼ 여기에 Firebase 콘솔의 설정값을 붙여 넣으세요 (null이면 이 브라우저 안에서만 테스트로 동작) ▼▼▼
@@ -861,7 +880,8 @@ function resolveNominateUpdates(d) {
   }
   const K = Math.max(1, alive.filter(id => roleOf(id) === 'mafia').length);
   // 득표 상위 K명(K = 남은 마피아 수). 경계 동점으로 K명을 넘으면 그 동점자들은 후보에서 빠짐 (결선 없음 → 후보는 항상 K명 이하)
-  const pk = { fixed: topWithTie(tally, K).fixed, tied: [], slots: 0 };
+  const tw = topWithTie(tally, K); const pk = { fixed: tw.fixed, tied: [], slots: 0 };
+  up[`rec/d${d}/cut`] = tw.tied.length ? tw.tied : null; // 동점이라 후보에서 빠진 사람 (분석용)
   up['pub/nom'] = { d, K, cands: pk.fixed, tied: pk.tied.length ? pk.tied : null, slots: pk.slots, voters, round: 1,
     tally: Object.keys(tally).sort((a, b) => tally[b] - tally[a] || num(a) - num(b)).slice(0, Math.max(8, K + 3)).map(id => ({ id, c: tally[id] })) };
   return { up, cands: pk.fixed, tied: pk.tied };
@@ -1034,6 +1054,7 @@ function resetUpdates() {
 /* =====================================================================
    게임 기록 (분석용) — 게임이 끝나면 진행 기기가 logs/에 한 판의 기록을 남김
    ===================================================================== */
+const LOG_RULES = '2026-10-12 · 후보 상위K(동점 넘치면 제외) · 투시 있음/없음 · 의사1 · 재판기록 공개';
 function logKey() {
   const t = new Date(), z = n => String(n).padStart(2, '0');
   return `${t.getFullYear()}${z(t.getMonth() + 1)}${z(t.getDate())}_${z(t.getHours())}${z(t.getMinutes())}${z(t.getSeconds())}_${App.code}_${rid(2)}`;
@@ -1054,7 +1075,8 @@ function buildGameLog() {
     Object.assign(o, (S.rec || {})['d' + d] || {});
     days['d' + d] = o;
   }
-  return { v: 1, start: m.gameAt || null, end: DB.now(), code: App.code, n: ids.length, comp: compNow(), pk: ST().pk,
+  // v2 (2026-10-12): 의사 1명 · 밤 의심 투표 폐지/재판 기록 공개 · 투시=직업 있음/없음 · 후보는 상위 K명(넘치는 동점 제외, 결선 없음)
+  return { v: 2, rules: LOG_RULES, undos: m.undos || 0, start: m.gameAt || null, end: DB.now(), code: App.code, n: ids.length, comp: compNow(), pk: ST().pk,
     w: e.w, ph: e.ph || null, day: m.day || 0, players, days, aw: e.aw || null };
 }
 function saveGameLog() {
@@ -1077,7 +1099,8 @@ const MafiaStats = {
     const div = (a, b) => (b ? a / b : '');
     const L = x => (!x ? [] : Array.isArray(x) ? x.filter(v => v != null) : Object.values(x));
     const G = [['게임ID', '날짜', '시작', '소요(분)', '인원', '마피아', '경찰', '의사', '시민', '승리', '끝난 시점', '진행 일수',
-      '처형', '처형된 마피아', '처형된 시민편', '암살', '의사 구조', '경찰이 찾은 마피아', '결선 투표', '판정에서 살아남은 후보', '연습판']];
+      '처형', '처형된 마피아', '처형된 시민편', '암살', '의사 구조', '경찰이 찾은 마피아', '결선 투표', '판정에서 살아남은 후보', '연습판',
+      '동점으로 빠진 후보', '후보 없던 날', '되돌리기', '규칙 버전']];
     const PR = [['게임ID', '날짜', '인원', '연습판', '번호', '이름', '직업', '최종 편', '결과', '생존', '사망 일차', '사망 원인',
       '투표 참여율', '지명 적중률', '판정 정확도', '받은 지명표', '후보가 된 횟수', '판정에서 살아남음',
       '조사 수', '찾은 마피아', '보호 수', '구조 수', '암살 시도', '암살 성공', '유령 편', '영혼 투시 결과', '수상']];
@@ -1097,7 +1120,7 @@ const MafiaStats = {
       const atNight = (id, d) => { const x = dth(id); return !x || x.d > d || (x.d === d && x.by === 'night'); };
       const st = {}; ids.forEach(id => (st[id] = { opp: 0, sub: 0, nPick: 0, nMaf: 0, jOpp: 0, jRight: 0, jSub: 0, sPick: 0, sMaf: 0,
         recv: 0, cand: 0, surv: 0, checks: 0, found: 0, prot: 0, saves: 0, kTry: 0, kHit: 0 }));
-      const gs = { ex: 0, exM: 0, kl: 0, sv: 0, runs: 0, escape: 0 }; const foundSet = new Set();
+      const gs = { ex: 0, exM: 0, kl: 0, sv: 0, runs: 0, escape: 0, cut: 0, noCand: 0 }; const foundSet = new Set();
       const V = (d, ph, v, t, val) => VT.push([gid, d, ph, nmO(v), RN[R(v)], t ? nmO(t) : '', t && PL[t] ? RN[R(t)] : '', val || '', practice ? 'O' : '']);
       for (let d = 1; d <= (g.day || 0); d++) {
         const D = (g.days || {})['d' + d] || {}; const nv = D.nv || {}, j = D.j || {}, s = D.s || {}, n = D.n || {}, ns = D.ns || {}, lk = D.look || {};
@@ -1110,6 +1133,7 @@ const MafiaStats = {
         }
         L(D.runs).forEach((ru, i) => { gs.runs++; const b = (ru && ru.b) || {}; for (const id in b) if (PL[id]) V(d, `결선 ${i + 1}차`, id, b[id] === 'skip' ? null : b[id], b[id] === 'skip' ? '기권' : ''); });
         for (const c of cands) if (st[c]) st[c].cand++;
+        gs.cut += L(D.cut).length; if (D.court && !cands.length) gs.noCand++;
         for (const r of L(court.res)) { if (r.ex) { gs.ex++; if (T(r.id) === 'mafia') gs.exM++; } else { gs.escape++; if (st[r.id]) st[r.id].surv++; } }
         if (D.court) for (const id of ids) if (atCourt(id, d) && st[id]) for (const c of cands) {
           if (c === id) continue; st[id].jOpp++; st[id].opp++;
@@ -1133,7 +1157,8 @@ const MafiaStats = {
       const c = g.comp || {}; const N = g.n || ids.length;
       const mins = g.start && g.end ? Math.round((g.end - g.start) / 6000) / 10 : '';
       G.push([gid, date, time, mins, N, c.mafia || 0, c.police || 0, c.doctor || 0, N - (c.mafia || 0) - (c.police || 0) - (c.doctor || 0),
-        SN[g.w] || g.w, aborted ? '중단' : g.ph === 'night' ? '밤' : '재판', g.day || 0, gs.ex, gs.exM, gs.ex - gs.exM, gs.kl, gs.sv, foundSet.size, gs.runs, gs.escape, practice ? 'O' : '']);
+        SN[g.w] || g.w, aborted ? '중단' : g.ph === 'night' ? '밤' : '재판', g.day || 0, gs.ex, gs.exM, gs.ex - gs.exM, gs.kl, gs.sv, foundSet.size, (g.v || 1) >= 2 ? '' : gs.runs, gs.escape, practice ? 'O' : '',
+        (g.v || 1) >= 2 ? gs.cut : '', gs.noCand, g.undos || 0, g.v >= 2 ? 'v2 (현재 규칙)' : 'v1 (이전 규칙)']);
       const awards = {}; for (const a of L(g.aw)) for (const id of L(a.ids)) (awards[id] = awards[id] || []).push(a.t);
       for (const id of ids) {
         const p = PL[id], x = st[id], citT = T(id) === 'citizen', win = !aborted && g.w === p.side, dt = dth(id);
@@ -1154,7 +1179,8 @@ const MafiaStats = {
         rr.n++; if (win) rr.w++; if (p.alive) rr.alive++; if (dt && dt.by === 'vote') rr.ex++; if (dt && dt.by === 'night') rr.kl++;
       }
       if (!aborted && !ids.some(id => PL[id].bot)) {
-        const b = byN[N] = byN[N] || { g: 0, cw: 0, mw: 0, days: 0, mins: 0, mn: 0 };
+        const vk = ((g.v || 1) >= 2 ? 2 : 1) * 1000 + N; // 규칙 버전별로 따로 모음
+        const b = byN[vk] = byN[vk] || { g: 0, cw: 0, mw: 0, days: 0, mins: 0, mn: 0 };
         b.g++; if (g.w === 'citizen') b.cw++; else b.mw++; b.days += g.day || 0; if (mins !== '') { b.mins += mins; b.mn++; }
       }
     }
@@ -1165,8 +1191,8 @@ const MafiaStats = {
       ST2.push([name, a.g, a.w, r3(div(a.w, a.g)), a.role.mafia, a.role.police, a.role.doctor, a.role.citizen, r3(div(a.cw, a.cg)), r3(div(a.mw, a.mg)),
         r3(div(a.alive, a.g)), a.ex, a.kl, r3(div(a.sub, a.opp)), r3(div(a.nMaf, a.nPick)), r3(div(a.jRight, a.jSub)), a.aw, a.last]);
     }
-    const NS = [['인원', '판 수', '시민 승', '마피아 승', '시민 승률', '평균 진행 일수', '평균 소요(분)']];
-    for (const k of Object.keys(byN).map(Number).sort((a, b) => a - b)) { const b = byN[k]; NS.push([k, b.g, b.cw, b.mw, r3(div(b.cw, b.g)), r3(div(b.days, b.g)), b.mn ? r3(b.mins / b.mn) : '']); }
+    const NS = [['규칙 버전', '인원', '판 수', '시민 승', '마피아 승', '시민 승률', '평균 진행 일수', '평균 소요(분)']];
+    for (const k of Object.keys(byN).map(Number).sort((a, b) => b - a > 500 ? 1 : a - b > 500 ? -1 : a - b)) { const b = byN[k]; NS.push([k >= 2000 ? 'v2' : 'v1', k % 1000, b.g, b.cw, b.mw, r3(div(b.cw, b.g)), r3(div(b.days, b.g)), b.mn ? r3(b.mins / b.mn) : '']); }
     const RS = [['직업', '연인원', '승률', '끝까지 생존율', '처형당한 비율', '암살당한 비율']];
     for (const r of ['mafia', 'police', 'doctor', 'citizen']) { const x = byRole[r]; if (x) RS.push([RN[r], x.n, r3(div(x.w, x.n)), r3(div(x.alive, x.n)), r3(div(x.ex, x.n)), r3(div(x.kl, x.n))]); }
     const HELP = [['항목', '뜻'],
@@ -1178,7 +1204,11 @@ const MafiaStats = {
       ['판정에서 살아남음', '후보가 됐지만 최종 판정에서 과반을 넘기지 않아 살아남은 횟수'],
       ['최종 편 / 유령 편', '살아 있으면 직업의 편, 죽은 뒤에는 유령으로서의 편 (처형된 시민은 직접 고름)'],
       ['결과', '최종 편이 이긴 편과 같으면 승'],
-      ['투표 상세', '모든 투표·밤 행동을 한 줄씩 기록. 필터로 특정 학생·일차를 골라 볼 수 있음']];
+      ['투표 상세', '모든 투표·밤 행동을 한 줄씩 기록. 필터로 특정 학생·일차를 골라 볼 수 있음'],
+      ['규칙 버전', 'v2 = 2026-10-12 규칙(후보는 득표 상위 마피아 수만큼, 동점으로 넘치면 그 동점자 제외 · 투시는 직업 있음/없음 · 의사 1명 · 재판 기록 공개). v1 = 그 이전 규칙. 승률을 비교할 때는 같은 버전끼리'],
+      ['동점으로 빠진 후보 / 후보 없던 날', '동점 때문에 후보에 못 오른 사람 수, 그 때문에 후보가 아무도 없던 날 수 (v2부터)'],
+      ['결선 투표', 'v1(이전 규칙)에서만 의미 있음. v2부터는 결선이 없어 빈칸'],
+      ['되돌리기', '선생님이 ‘이전 단계’로 되돌린 횟수. 많으면 진행이 꼬였던 판이라 분석에서 조심']];
     return { '학생 누적': ST2, '게임': G, '학생별 기록': PR, '인원별 승률': NS, '직업별 승률': RS, '투표 상세': VT, '설명': HELP };
   },
   // 의존성 없는 아주 작은 xlsx 작성기 (zip 무압축)
@@ -1277,9 +1307,34 @@ async function advance() {
       case 'morning': up = phaseUp('talk', d); break;
       default: return;
     }
+    if (m.phase !== 'lobby') pushUndo(); else { undoStack().length = 0; saveUndo(); }
     await DB.update(roomPath(), up);
   } catch (e) { console.error(e); alert('진행 중 문제가 생겼어요: ' + e.message); }
   finally { App.busy = false; }
+}
+// ↩ 되돌리기: 단계를 넘기기 직전의 방 전체 상태를 진행 기기에 보관(최근 8단계)
+function undoKey() { return 'mafia_undo_' + roomPath(); }
+function undoStack() {
+  if (!App.undo || App.undoK !== undoKey()) { App.undoK = undoKey(); App.undo = []; try { const v = JSON.parse(localStorage.getItem(undoKey()) || '[]'); if (Array.isArray(v)) App.undo = v; } catch (e) {} }
+  return App.undo;
+}
+function saveUndo() { try { localStorage.setItem(undoKey(), JSON.stringify(App.undo.slice(-8))); } catch (e) { App.undo = App.undo.slice(-3); } }
+function pushUndo() {
+  const snap = JSON.parse(JSON.stringify(S)); delete snap._ready;
+  const st = undoStack(); st.push(snap); if (st.length > 8) st.splice(0, st.length - 8); saveUndo();
+}
+async function undoStep() {
+  const st = undoStack(); const snap = st[st.length - 1]; if (!snap || !snap.meta) return;
+  const ph = snap.meta.phase, d = snap.meta.day;
+  if (!App.demo && !confirm(`직전 단계(${d ? d + '일차 ' : ''}${PH[ph] ? PH[ph].name : ph})로 되돌릴까요?\n지금 단계에서 진행된 결과는 취소돼요.`)) return;
+  st.pop(); saveUndo();
+  const undos = ((S.meta && S.meta.undos) || 0) + 1;
+  const data = JSON.parse(JSON.stringify(snap)); const now = DB.now();
+  data.meta.startedAt = now; data.meta.spkAt = now; data.meta.undos = undos;
+  if (S.meta && S.meta.logId && !data.meta.logId && !App.demo) DB.set('logs/' + S.meta.logId, null).catch(() => {});
+  App.vSeen = {}; App.vpopHide = null;
+  if (App.deadAt) for (const id in (data.players || {})) if (data.players[id].alive !== false) delete App.deadAt[id];
+  await DB.set(roomPath(), data);
 }
 function allIn() {
   const m = S.meta; const A = actDay(m.day);
@@ -1590,6 +1645,7 @@ function renderDemo() {
   $('#demobar').innerHTML = `<span class="db-ph">체험 · ${m.phase === 'lobby' || m.phase === 'end' ? '' : m.day + '일차 '}${ph.name || ''}</span>
     <button class="${App.view === 'phone' ? 'on' : ''}" data-a="dview" data-v="phone">📱 내 휴대폰</button>
     <button class="${App.view === 'tv' ? 'on' : ''}" data-a="dview" data-v="tv">📺 선생님 화면</button>
+    ${m.phase !== 'lobby' && undoStack().length ? '<button data-a="undo">↩ 이전</button>' : ''}
     ${m.phase === 'end' ? '' : `<button data-a="dnext">▶ ${nextLabel()}</button>`}
     ${alive && live ? '<button data-a="dghost">👻 죽어 보기</button>' : ''}
     <button data-a="dquit">나가기</button>`;
@@ -1818,7 +1874,7 @@ function stageHTML() {
   const cnt = k => aliveIds().filter(id => A[id] && A[id][k]).length;
   if (ph === 'role') return `<p class="lead">직업을 확인하세요</p>${prog(sortedIds().filter(id => actDay(0)[id] && actDay(0)[id].ok).length, nAll, '명 확인')}`;
   if (ph === 'talk') return `<p class="lead">휴대폰을 넣고 일어나세요</p>${cluesHTML(d)}`;
-  if (ph === 'court') return `<p class="lead">자리로 돌아오세요</p><p class="sub">💤 유령은 엎드려요</p>${cluesHTML(d)}`;
+  if (ph === 'court') return `<p class="lead">자리로 돌아오세요</p><p class="sub">👻 유령은 조용히 구경해요</p>${cluesHTML(d)}`;
   if (ph === 'nominate') return `<p class="sub">득표 상위 <b>${st.mafia}명까지</b> 후보 <small>(동점으로 넘치면 그 동점자는 제외)</small></p>${prog(cnt('nvd'), nAlive, '명 제출')}`;
   if (ph === 'runoff') { const nom = nomNow();
     return `<p class="sub">${nom.round > 1 ? `<b>${nom.round}차</b> · ` : ''}동점자 중 <b>${nom.slots}명</b> 선택</p>
@@ -1854,6 +1910,7 @@ function gameHTML() {
       <button data-a="admin">👁 명단</button>
       ${ph === 'end' ? '' : '<button data-a="abort">중단</button>'}
       <span class="grow"></span>
+      ${ph !== 'lobby' && undoStack().length ? '<button class="undo" data-a="undo" title="직전 단계로 되돌리기">↩ 이전 단계</button>' : ''}
       ${ph === 'end' ? '<button class="primary" data-a="reset">새 게임</button>'
         : `${ready ? '<span class="readyhint ok">✓ 모두 제출</span>' : ''}<button class="primary next ${ready ? 'ready' : ''} ${nightPending() ? 'wait' : ''}" data-a="next">${nightPending() ? '⏳' : '▶'} ${nextLabel()}</button>`}
     </footer></div>`;
@@ -1882,12 +1939,12 @@ const SLIDES = () => {
       <div><b>② 후보 지명</b><small>1명씩 투표, 득표 상위 ‘남은 마피아 수’명까지 후보. 동점 때문에 그 수를 넘으면 그 동점자들은 후보에서 빠져요</small></div>
       <div><b>③ 최후의 발언</b><small>후보가 한 명씩 일어나 변론</small></div>
       <div><b>④ 최종 판정</b><small>후보마다 처형/살림, 과반수면 처형</small></div></div>
-     <p>처형된 사람의 정체는 공개하지 않아요. 대신 <b>밤에 재판 기록</b>(누가 누구를 지명했고, 누가 처형·살림을 눌렀는지)이 모두의 휴대폰에 공개돼요. 👻 유령은 광장 재판 동안 책상에 엎드려요.</p>`,
+     <p>처형된 사람의 정체는 공개하지 않아요. 대신 <b>밤에 재판 기록</b>(누가 누구를 지명했고, 누가 처형·살림을 눌렀는지)이 모두의 휴대폰에 공개돼요. 👻 유령은 광장 재판을 조용히 구경해요 (말하기·투표·손짓 신호 X).</p>`,
     `<h2>👻 죽어도 끝이 아니에요</h2><div class="two">
       <div><b>편 정하기</b><p>마피아는 어떻게 죽든 마피아 편, 마피아가 아닌 사람이 암살당하면 시민 편이에요. 마피아는 동료도 암살할 수 있어서, 암살당한 유령이 꼭 시민 편인 건 아니에요. 투표로 처형된 경찰·의사·시민은 편을 직접 골라요.</p></div>
       <div><b>👁 ${SKILL}</b><p>게임 중 <b>단 한 번</b>, 밤에 살아 있는 사람 1명이 <b>직업이 있는지</b> 들여다봐요. ‘직업 있음’이면 마피아·경찰·의사 중 하나, ‘없음’이면 시민이에요. 언제 누구를 볼지는 유령끼리 의논해도 돼요. 자유 대화에서 말할 수 있지만, 그 말이 진실인지는 아무도 몰라요.</p></div></div>
-     <p>유령은 투표할 수 없고, 광장 재판 동안 엎드려 있어요. 고른 편이 이기면 유령도 함께 승리!</p>`,
-    `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>자유 대화·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>엎드린 유령이 고개 들기</p></div>
+     <p>유령은 투표할 수 없고, 광장 재판은 말없이 구경만 해요. 휴대폰을 쓰는 시간에는 지금까지의 재판 기록이 화면에 펼쳐져 있어요. 고른 편이 이기면 유령도 함께 승리!</p>`,
+    `<h2>우리의 약속</h2><div class="two"><div><b>금지</b><p>자유 대화·광장에서 휴대폰 꺼내기<br>내 휴대폰 화면 보여 주기<br>유령이 재판 중에 말하거나 신호 보내기</p></div>
      <div><b>얼마든지 OK</b><p>거짓말과 연기<br>다른 직업인 척하기<br>동맹 맺기, 배신하기</p></div></div>
      <p>투표 기록도 게임 속 이야기예요. 게임이 끝나면 서운해하기 없기!</p>`
   ];
@@ -1959,7 +2016,7 @@ function roleCard() {
   if (dead) {
     face = `<div class="rc-emoji">👻</div><div class="rc-name">${sd === 'mafia' ? '마피아 편 유령' : sd === 'citizen' ? '시민 편 유령' : '유령'}</div>
       <span class="rc-team ${sd || ''}">원래 ${R.emoji} ${R.name}</span>
-      ${matesLine(mafiaKnownForGhost(), '🔪')}`;
+      ${mafiaKnownForGhost().length ? `<p class="mates">🔪 마피아 명단</p>${mafiaGrid(mafiaKnownForGhost())}` : ''}`;
   } else {
     face = `<div class="rc-emoji">${R.emoji}</div><div class="rc-name">${R.name}</div>
       <span class="rc-team ${R.team}">${R.team === 'mafia' ? '마피아 편' : '시민 편'}</span><p class="rc-desc">${roleDesc(r)}</p>
@@ -1974,6 +2031,22 @@ function notebook() {
   return items.sort((a, b) => b.d - a.d);
 }
 function logsHTML(list) { return list.map(l => `<p>${l.d ? `<small>${l.d}일</small>` : ''}${esc(l.tx)}</p>`).join(''); }
+// 마피아 명단 카드 (얼굴 · 큰 번호 · 이름)
+function mafiaGrid(ids) {
+  return `<div class="mgrid">${ids.map(id => `<div class="mcard ${id === App.pid ? 'me' : ''} ${isAlive(id) ? '' : 'gone'}"><div class="mf">${figSVG(num(id) || 1, isAlive(id) ? 'alive' : 'ghost')}</div><b>${num(id)}</b><span>${id === App.pid ? '나' : esc(nm(id))}${isAlive(id) ? '' : ' 👻'}</span></div>`).join('')}</div>`;
+}
+// 마피아 편을 고른 유령: 고르는 순간 마피아 명단을 한 화면에 크게. '확인했어요'를 누르면 접힘(📒 수첩에서 다시 볼 수 있음)
+function mafiaSideCard() {
+  if (sideOf(App.pid) !== 'mafia' || roleOf(App.pid) === 'mafia') return '';
+  const ids = arr(mySec().mates); if (!ids.length) return '';
+  const k = 'mafia_ack_' + App.code + '_' + App.pid;
+  let ack = App.mafAck; if (!ack) { try { ack = store.getItem(k) === '1'; } catch (e) {} }
+  if (ack) return '';
+  return `<section class="s-card alert mmeet"><h3>🔪 마피아 편이 되었어요 <small>마피아 ${ids.length}명</small></h3>
+    <p class="muted" style="margin-top:4px">이 사람들이 마피아예요. 마피아가 이기면 나도 승리!</p>
+    ${mafiaGrid(ids)}
+    <button class="btn big sbtn" style="margin-top:14px" data-a="mafack">확인했어요</button></section>`;
+}
 function sideChoiceCard() {
   if (isAlive(App.pid) || sideOf(App.pid) || !mySec().role) return '';
   if (P(App.pid).death && P(App.pid).death.by === 'night') return '';
@@ -2001,12 +2074,15 @@ function renderStudent() {
     App.lastKey = key; App.lookSel = null;
   }
   const y = window.scrollY;
-  const dead = !isAlive(App.pid);
+  // 휴대폰도 판결 공개 시각을 앞 화면과 맞춤 (처형된 학생이 앞 화면보다 먼저 알지 않도록)
+  if (ph === 'verdict') { App.vSeen = App.vSeen || {}; const k = 'v' + m.day; if (!App.vSeen[k]) { const st = m.startedAt || 0; App.vSeen[k] = Math.abs(Date.now() - st) < 30000 ? st : Date.now(); } }
+  const rv0 = verdictRevealAt(App.pid);
+  const dead = !isAlive(App.pid) && !(rv0 && Date.now() < rv0);
   $('#app').innerHTML = `<div class="S">
     <header class="bar"><div class="me"><b>${me().num || '·'}</b>${esc(me().name)}${dead ? ' 👻' : ''}</div>
       <div class="ph">${ph !== 'lobby' && ph !== 'end' ? m.day + '일차 · ' : ''}${PH[ph].icon} ${PH[ph].name}</div>
       ${ph !== 'lobby' ? '<button class="nb" data-a="drawer" aria-label="직업과 수첩 보기">📒</button>' : ''}</header>
-    ${sBody()}
+    ${dead && !['lobby', 'role', 'end'].includes(ph) ? mafiaSideCard() : ''}${sBody()}
   </div>
   <div class="drawer ${App.drawer ? 'open' : ''}">${App.drawer ? drawerHTML() : ''}</div>`;
   window.scrollTo(0, y);
@@ -2017,7 +2093,7 @@ function drawerHTML() {
     <div style="margin-top:12px">${roleCard()}</div>
     ${mySec().role ? `<section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>` : ''}
     <section class="s-card logs"><h3>수첩</h3>${logs.length ? logsHTML(logs) : '<p class="muted">아직 없어요</p>'}</section>
-    ${recDays().map(d => `<section class="s-card"><h3>📜 ${d}일 재판 기록</h3>${recordHTML(d)}</section>`).join('')}</div>`;
+    ${recDays().map(d => recBox('w' + d, `📜 ${d}일 재판 기록`, d)).join('')}</div>`;
 }
 // 기록을 볼 수 있는 날: 재판이 끝나고 밤이 된 날부터 (오늘 재판 기록은 밤에 공개)
 function recDays() {
@@ -2038,8 +2114,13 @@ function sBody() {
       <section class="s-card"><h3>🏆 승리 조건</h3><p>${winText()}</p></section>
       <button class="btn big sbtn" data-a="ok" ${ok ? 'disabled' : ''}>${ok ? '✓ 확인 완료' : '확인했어요'}</button>`;
   }
-  if (dead && COURT.includes(ph) && ph !== 'verdict') return sideCard + pocket('💤', '엎드려 주세요', '');
-  if (ph === 'talk') return (dead ? sideCard : '') + pocket('📵', '휴대폰을 넣으세요', dead ? '👻 유령도 대화 OK' : '');
+  // 유령: 산 사람과 비슷한 화면을 보되 투표·판정은 못 함. 재판 기록은 화면에 바로 펼쳐 둠
+  if (dead && ph === 'court') return sideCard + pocket('🏛️', '광장 토론', '👻 조용히 구경해요') + ghostRec();
+  if (dead && ph === 'nominate') return sideCard + `<section class="s-card ghostw"><h3>🗳️ 후보 지명 중 <small>상위 ${status().mafia}명까지</small></h3><p class="muted">👻 유령은 투표하지 않아요. 누가 누구를 찍었는지는 밤에 공개돼요.</p></section>` + ghostRec();
+  if (dead && ph === 'runoff') return sideCard + `<section class="s-card ghostw"><h3>🔁 결선 투표 중</h3><p class="muted">👻 유령은 투표하지 않아요</p></section>` + ghostRec();
+  if (dead && ph === 'defense') return sideCard + `<section class="s-card"><h3>처형 후보</h3>${candListHTML(false)}</section>` + ghostRec();
+  if (dead && ph === 'judge') return sideCard + `<section class="s-card ghostw"><h3>⚖️ 최종 판정 중 <small>${needKill(aliveIds().length - 1)}표↑ 처형</small></h3>${candListHTML(false)}<p class="muted">👻 유령은 판정하지 않아요</p></section>` + ghostRec();
+  if (ph === 'talk') return (dead ? sideCard : '') + pocket('📵', '휴대폰을 넣으세요', dead ? '👻 유령도 대화 OK' : '') + (dead ? ghostRec() : '');
   if (ph === 'court') return pocket('🏛️', '광장 토론', '');
   if (ph === 'nominate') {
     const A = myAct(d); const others = aliveIds().filter(x => x !== App.pid);
@@ -2055,7 +2136,7 @@ function sBody() {
   }
   if (ph === 'defense') {
     const mine = candsNow().includes(App.pid);
-    return `${mine ? '<section class="s-card alert"><h3>🎤 당신은 후보예요</h3></section>' : ''}<section class="s-card"><h3>처형 후보</h3>${candListHTML(false)}</section>`;
+    return `${mine ? '<section class="s-card alert"><h3>🎤 당신은 후보예요</h3><p>앞으로 나와 최후의 발언을 해 주세요</p></section>' : ''}<section class="s-card"><h3>처형 후보</h3>${candListHTML(false)}</section>`;
   }
   if (ph === 'judge') {
     const A = myAct(d); const cs = candsNow().filter(x => x !== App.pid); const j = A.j || {};
@@ -2066,15 +2147,19 @@ function sBody() {
       ${doneBtn('jDone', A.jd, true, '제출')}`;
   }
   if (ph === 'verdict') {
+    // 판결은 휴대폰에 미리 보여 주지 않고 앞 화면에서만 공개. 처형된 학생도 앞 화면 공개 전에는 모르게
+    // 휴대폰도 앞 화면과 같은 순서·시각으로 공개 (막대 → 표 수 → 도장). 처형된 학생은 자기 도장이 찍힌 뒤에 유령 화면으로
     const v = S.pub && S.pub.verdict && S.pub.verdict.d === d ? S.pub.verdict : null;
-    return `${sideCard}<section class="s-card">${verdictHTML(v, false)}</section>`;
+    const rv = verdictRevealAt(App.pid);
+    if (rv && Date.now() < rv) { clearTimeout(App.vTimer); App.vTimer = setTimeout(rerender, rv - Date.now() + 100); return `<section class="s-card">${verdictHTML(v, false)}</section>`; }
+    return `${sideCard}<section class="s-card">${verdictHTML(v, false)}</section>${dead ? ghostRec() : ''}`;
   }
   if (ph === 'night') return dead ? sideCard + ghostNight(d) : aliveNight(d);
   if (ph === 'morning') {
     const mo = S.pub && S.pub.morning && S.pub.morning.day === d ? S.pub.morning : null;
     const mine = arr(sc.log).filter(l => l.d === d - 1 && l.ph === 'n');
     return `${sideCard}<section class="s-card news">${newsHTML(mo)}</section>
-      ${mine.length ? `<section class="s-card logs"><h3>📒 밤사이</h3>${logsHTML(mine)}</section>` : ''}`;
+      ${mine.length ? `<section class="s-card logs"><h3>📒 밤사이</h3>${logsHTML(mine)}</section>` : ''}${dead ? ghostRec() : ''}`;
   }
   if (ph === 'end') {
     const e = S.pub && S.pub.end; if (!e) return '';
@@ -2086,13 +2171,25 @@ function sBody() {
   }
   return '';
 }
+// 유령 화면 아래에 늘 펼쳐 두는 재판 기록: 가장 최근 날은 펼치고, 지난 날은 접어 둠
+function ghostRec() {
+  const ds = recDays(); if (!ds.length) return '';
+  return ds.map(d => recBox('g' + d, `📜 ${d}일 재판 기록`, d)).join('');
+}
+// 여닫는 재판 기록 상자 (기본은 닫힘, 다시 그려도 열림 상태 유지)
+function recBox(key, title, d) {
+  App.recBox = App.recBox || {}; const o = !!App.recBox[key];
+  return `<section class="s-card recbox ${o ? 'open' : ''}"><button class="rb-t" data-a="recbox" data-v="${key}"><span>${title}</span><i>${o ? '▲ 닫기' : '▼ 열기'}</i></button>${o ? `<div class="rb-in">${recordHTML(d)}</div>` : ''}</section>`;
+}
 function aliveNight(d) {
   const sc = mySec(); const r = sc.role; const A = myAct(d); const alive = aliveIds(); const pk = ST().pk;
   const others = alive.filter(x => x !== App.pid);
   let roleSec = '';
   if (r === 'mafia' && d === 1) {
     const mates = arr(sc.mates);
-    roleSec = `<section class="s-card alert"><h3>🤝 동료 확인</h3>${mates.length ? matesLine(mates, '🔪') : '<p class="mates">마피아는 나 혼자</p>'}<p class="muted">암살은 내일 밤부터</p></section>`;
+    roleSec = `<section class="s-card alert mmeet"><h3>🔪 우리 마피아 <small>나 포함 ${mates.length + 1}명</small></h3>
+      ${mafiaGrid([App.pid, ...mates])}
+      ${mates.length ? '' : '<p class="mates">마피아는 나 혼자예요</p>'}<p class="muted">잘 기억해 두세요 · 암살은 내일 밤부터</p></section>`;
   } else if (r === 'mafia') {
     const mates = arr(sc.mates); const picks = {};
     mates.forEach(x => { const t = actDay(d)[x] && actDay(d)[x].n; if (t && isAlive(x)) (picks[t] = picks[t] || []).push(x); });
@@ -2111,11 +2208,11 @@ function aliveNight(d) {
       <div class="chips">${alive.map(id => chip(id, A.n === id, 'nact', '', id === sc.lastProtect ? 'off' : '')).join('')}</div></section>`;
   }
   return `${roleSec}
-    <section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>
+    ${recBox('n' + d, '📜 오늘의 재판 기록', d)}
     ${doneBtn('nightDone', A.nd, true, '확인 완료')}`;
 }
 function ghostNight(d) {
-  if (!sideOf(App.pid)) return `<section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>`;
+  if (!sideOf(App.pid)) return ghostRec();
   const A = myAct(d); const alive = aliveIds(); const sc = mySec();
   const look = arr(sc.looks)[0]; const sel = App.lookSel && alive.includes(App.lookSel) ? App.lookSel : null;
   const body = look
@@ -2126,7 +2223,7 @@ function ghostNight(d) {
   const known = mafiaKnownForGhost();
   return `<section class="s-card"><h3>👁 ${SKILL} <small>게임 중 1회</small></h3>
       ${known.length ? matesLine(known, '🔪') : ''}${body}</section>
-    <section class="s-card"><h3>📜 오늘의 재판 기록</h3>${recordHTML(d)}</section>
+    ${look || A.look || A.nd ? ghostRec() : '<p class="muted" style="text-align:center;margin:6px 0 12px">👁 투시를 쓰거나 아래 ‘확인 완료’를 누르면 재판 기록이 나와요</p>'}
     ${doneBtn('nightDone', A.nd, true, '확인 완료')}`;
 }
 
@@ -2145,6 +2242,7 @@ async function onAction(a, el) {
   if (App.demo) {
     if (a === 'dview') { App.view = el.dataset.v; App.slides = false; App.admin = false; window.scrollTo(0, 0); return renderDemo(); }
     if (a === 'dnext') return goNext();
+    if (a === 'undo') return undoStep();
     if (a === 'dghost') {
       const d = S.meta.day; const by = ['night', 'morning'].includes(S.meta.phase) ? 'night' : 'vote';
       return DB.update(roomPath(), { [`players/${App.pid}/alive`]: false, [`players/${App.pid}/death`]: { d, by } });
@@ -2189,6 +2287,7 @@ async function onAction(a, el) {
       return advance();
     }
     if (a === 'next') return goNext();
+    if (a === 'undo') return undoStep();
     void m;
     if (a === 'abort') { if (confirm('게임을 중단하고 모두의 정체를 공개할까요?')) DB.update(roomPath(), endUpdates({ w: 'none', why: '선생님이 게임을 중단했어요.' })); return; }
     if (a === 'reset') { if (App.demo || confirm('같은 학생들로 새 게임을 준비할까요? (입장 화면으로 돌아가요)')) DB.update(roomPath(), resetUpdates()); return; }
@@ -2199,9 +2298,11 @@ async function onAction(a, el) {
     const m = S.meta; if (!m) return; const d = m.day; const alive = isAlive(App.pid); const sc = mySec();
     const W = o => DB.update(roomPath(`act/d${d}/${App.pid}`), o);
     if (a === 'drawer') { App.drawer = !App.drawer; return rerender(); }
+    if (a === 'recbox') { App.recBox = App.recBox || {}; App.recBox[el.dataset.v] = !App.recBox[el.dataset.v]; return rerender(); }
     if (a === 'recnom') { const v = +el.dataset.v; App.recOpen = App.recOpen === v ? null : v; return rerender(); }
     if (a === 'ok' && m.phase === 'role') return DB.update(roomPath(`act/d0/${App.pid}`), { ok: true });
     if (a === 'sidesel') { App.sideSel = el.dataset.v; return rerender(); }
+    if (a === 'mafack') { App.mafAck = true; try { store.setItem('mafia_ack_' + App.code + '_' + App.pid, '1'); } catch (e) {} return rerender(); }
     if (a === 'sidego') { if (!App.sideSel || alive || sideOf(App.pid)) return; return DB.update(roomPath('choice'), { [App.pid]: App.sideSel }); }
     const A = myAct(d);
     if (m.phase === 'nominate' && alive) {
